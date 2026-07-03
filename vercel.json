@@ -1,0 +1,7 @@
+{
+  "crons": [
+    { "path": "/api/cron/daily-doses",    "schedule": "1 0 * * *" },
+    { "path": "/api/cron/rx-expiry",      "schedule": "0 8 * * *" },
+    { "path": "/api/cron/visit-reminder", "schedule": "0 17 * * *" }
+  ]
+}
