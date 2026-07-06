@@ -1,37 +1,29 @@
-'use client';
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentFamily } from "@/lib/family";
+import { PageHeader } from "@/components/dashboard/Shell";
+import { VitalsManager } from "@/components/dashboard/VitalsManager";
 
-export default function SantePage() {
-  const [vitals, setVitals] = useState<any[]>([]);
-  const supabase = createClient();
+export const metadata = { title: "Santé — Famō" };
 
-  useEffect(() => {
-    async function loadVitals() {
-      const { data } = await supabase.from("vitals").select("*").limit(5).order("created_at", { ascending: false });
-      setVitals(data || []);
-    }
-    loadVitals();
-  }, []);
+export default async function SantePage() {
+  const ctx = await getCurrentFamily();
+  if (!ctx) redirect("/onboarding");
+  const supabase = await createClient();
+
+  const { data: vitals } = await supabase
+    .from("vitals")
+    .select("id, label, value, unit, icon, recorded_at")
+    .eq("family_id", ctx.family.id)
+    .order("recorded_at", { ascending: false });
 
   return (
-    <div style={{ padding: 32 }}>
-      <h1 style={{ fontFamily: "'Fraunces',serif", fontSize: 24, marginBottom: 24 }}>Santé</h1>
-      <div style={{ background: "#fff", borderRadius: 12, padding: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-        <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 18, marginBottom: 16 }}>Derniers indicateurs</h2>
-        {vitals.length === 0 ? (
-          <p style={{ color: "#66756F" }}>Aucune donnée enregistrée</p>
-        ) : (
-          <div style={{ display: "grid", gap: 12 }}>
-            {vitals.map((v: any) => (
-              <div key={v.id} style={{ padding: 12, background: "#F4F2EC", borderRadius: 8 }}>
-                <p style={{ fontWeight: 600, marginBottom: 4 }}>{v.type}</p>
-                <p style={{ color: "#66756F" }}>{v.value} {v.unit} — {new Date(v.created_at).toLocaleDateString('fr')}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+    <div style={{ padding: "28px clamp(16px,4vw,36px)", maxWidth: 820, margin: "0 auto" }}>
+      <PageHeader
+        title="Santé"
+        subtitle={ctx.parent ? `Suivi de ${ctx.parent.name}` : "Suivi des indicateurs"}
+      />
+      <VitalsManager initial={vitals ?? []} familyId={ctx.family.id} parentId={ctx.parent?.id ?? null} />
     </div>
   );
 }

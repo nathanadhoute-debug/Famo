@@ -1,37 +1,48 @@
-'use client';
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentFamily } from "@/lib/family";
+import { PageHeader } from "@/components/dashboard/Shell";
+import { VisitsManager } from "@/components/dashboard/VisitsManager";
 
-export default function RelaisPage() {
-  const [visits, setVisits] = useState<any[]>([]);
-  const supabase = createClient();
+export const metadata = { title: "Relais — Famō" };
 
-  useEffect(() => {
-    async function loadVisits() {
-      const { data } = await supabase.from("visits").select("*").limit(8).order("scheduled_date", { ascending: true });
-      setVisits(data || []);
-    }
-    loadVisits();
-  }, []);
+export default async function RelaisPage() {
+  const ctx = await getCurrentFamily();
+  if (!ctx) redirect("/onboarding");
+  const supabase = await createClient();
+
+  const [{ data: visits }, { data: membersRaw }] = await Promise.all([
+    supabase.from("visits")
+      .select("id, visit_date, note, visitor_id")
+      .eq("family_id", ctx.family.id)
+      .order("visit_date", { ascending: false }),
+    supabase.from("family_members")
+      .select("user_id, profiles(full_name)")
+      .eq("family_id", ctx.family.id),
+  ]);
+
+  const members = (membersRaw ?? []).map((m: any) => ({
+    userId: m.user_id,
+    name: m.profiles?.full_name || (m.user_id === ctx.user.id ? "Moi" : "Membre"),
+  }));
+  // Garantit que l'utilisateur courant est sélectionnable même sans profil complet.
+  if (!members.some((m) => m.userId === ctx.user.id)) {
+    members.unshift({ userId: ctx.user.id, name: "Moi" });
+  }
 
   return (
-    <div style={{ padding: 32 }}>
-      <h1 style={{ fontFamily: "'Fraunces',serif", fontSize: 24, marginBottom: 24 }}>Relais</h1>
-      <div style={{ background: "#fff", borderRadius: 12, padding: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-        <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 18, marginBottom: 16 }}>Calendrier des visites</h2>
-        {visits.length === 0 ? (
-          <p style={{ color: "#66756F" }}>Aucune visite programmée</p>
-        ) : (
-          <div style={{ display: "grid", gap: 12 }}>
-            {visits.map((v: any) => (
-              <div key={v.id} style={{ padding: 12, background: "#F4F2EC", borderRadius: 8, borderLeft: "4px solid #3A6B5E" }}>
-                <p style={{ fontWeight: 600, marginBottom: 4 }}>{v.visitor_name}</p>
-                <p style={{ color: "#66756F", fontSize: 14 }}>📅 {new Date(v.scheduled_date).toLocaleDateString('fr')} à {v.time || "—"}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+    <div style={{ padding: "28px clamp(16px,4vw,36px)", maxWidth: 820, margin: "0 auto" }}>
+      <PageHeader
+        title="Relais"
+        subtitle="Organisez qui passe voir votre proche, et quand."
+      />
+      <VisitsManager
+        initial={visits ?? []}
+        members={members}
+        familyId={ctx.family.id}
+        parentId={ctx.parent?.id ?? null}
+        currentUserId={ctx.user.id}
+      />
     </div>
   );
 }
