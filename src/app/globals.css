@@ -1,0 +1,141 @@
+/* ------------------------------------------------------------------ *
+ * Famō — Design system global
+ * Vert sauge profond, fonds crème chaud, Fraunces (display) + Inter.
+ * Styles inline + CSS custom (pas de Tailwind).
+ * ------------------------------------------------------------------ */
+
+:root {
+  /* Verts sauge */
+  --sage-900: #1E3830;   /* vert profond — texte fort, fonds sombres */
+  --sage-700: #3A6B5E;   /* vert principal — boutons, accents */
+  --sage-600: #4C8272;   /* vert clair — hover, dégradés */
+  --sage-050: #EAF0ED;   /* vert pâle — fonds doux */
+
+  /* Crème & neutres chauds */
+  --cream:    #F4F2EC;   /* fond principal */
+  --cream-2:  #FAFAF7;   /* fond champs / cartes secondaires */
+  --card:     #FFFFFF;
+  --ink:      #1A2622;   /* texte principal */
+  --muted:    #66756F;   /* texte secondaire */
+  --line:     #E4E0D6;   /* bordures */
+
+  /* Accents chaleureux */
+  --terracotta: #C97C5D;
+  --amber:      #D9A05B;
+  --danger:     #B04B3C;
+  --success:    #4C8272;
+
+  --radius:    16px;
+  --radius-sm: 10px;
+  --shadow:    0 2px 20px rgba(30, 56, 48, 0.06);
+  --shadow-lg: 0 12px 40px rgba(30, 56, 48, 0.12);
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--sage-900);
+  margin: 0;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+p { margin: 0; line-height: 1.6; }
+a { color: inherit; text-decoration: none; }
+
+/* Boutons réutilisables ------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, transform .05s, box-shadow .15s, opacity .15s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-primary { background: var(--sage-700); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--sage-900); }
+
+.btn-ghost { background: transparent; color: var(--sage-700); }
+.btn-ghost:hover:not(:disabled) { background: var(--sage-050); }
+
+.btn-outline { background: #fff; color: var(--sage-900); border: 1px solid var(--line); }
+.btn-outline:hover:not(:disabled) { border-color: var(--sage-700); }
+
+.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--line); }
+.btn-danger:hover:not(:disabled) { background: #FBEEEC; border-color: var(--danger); }
+
+/* Cartes ----------------------------------------------------------- */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+/* Champs ----------------------------------------------------------- */
+.input, .textarea, .select {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--cream-2);
+}
+.input:focus, .textarea:focus, .select:focus {
+  outline: none;
+  border-color: var(--sage-700);
+  box-shadow: 0 0 0 3px rgba(58, 107, 94, .12);
+}
+.textarea { resize: vertical; min-height: 96px; line-height: 1.5; }
+.field-label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+
+/* Badges / puces --------------------------------------------------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--sage-050);
+  color: var(--sage-700);
+}
+
+/* Utilitaires ------------------------------------------------------ */
+.muted { color: var(--muted); }
+.spin { animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
