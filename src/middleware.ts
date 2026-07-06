@@ -24,13 +24,15 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
+  // Routes accessibles sans être connecté. "/" est la landing publique.
   const publicRoutes = ["/login", "/signup", "/invite"];
-  const isPublic = publicRoutes.some((r) => pathname.startsWith(r));
+  const isPublic = pathname === "/" || publicRoutes.some((r) => pathname.startsWith(r));
 
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
-  if (user && (pathname === "/login" || pathname === "/signup")) {
+  // Un utilisateur déjà connecté n'a rien à faire sur la landing / l'auth.
+  if (user && (pathname === "/" || pathname === "/login" || pathname === "/signup")) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
