@@ -1,39 +1,29 @@
-'use client';
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentFamily } from "@/lib/family";
+import { PageHeader } from "@/components/dashboard/Shell";
+import { DocumentsManager } from "@/components/dashboard/DocumentsManager";
 
-export default function DocumentsPage() {
-  const [documents, setDocuments] = useState<any[]>([]);
-  const supabase = createClient();
+export const metadata = { title: "Documents — Famō" };
 
-  useEffect(() => {
-    async function loadDocuments() {
-      const { data } = await supabase.storage.from("documents").list();
-      setDocuments(data || []);
-    }
-    loadDocuments();
-  }, []);
+export default async function DocumentsPage() {
+  const ctx = await getCurrentFamily();
+  if (!ctx) redirect("/onboarding");
+  const supabase = await createClient();
+
+  const { data: docs } = await supabase
+    .from("documents")
+    .select("id, label, category, file_size, mime_type, created_at, uploaded_by")
+    .eq("family_id", ctx.family.id)
+    .order("created_at", { ascending: false });
 
   return (
-    <div style={{ padding: 32 }}>
-      <h1 style={{ fontFamily: "'Fraunces',serif", fontSize: 24, marginBottom: 24 }}>Documents</h1>
-      <div style={{ background: "#fff", borderRadius: 12, padding: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-        <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 18, marginBottom: 16 }}>Coffre-fort</h2>
-        {documents.length === 0 ? (
-          <p style={{ color: "#66756F" }}>Aucun document</p>
-        ) : (
-          <div style={{ display: "grid", gap: 12 }}>
-            {documents.map((doc: any) => (
-              <div key={doc.name} style={{ padding: 12, background: "#F4F2EC", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <p style={{ fontWeight: 600, marginBottom: 4 }}>📄 {doc.name}</p>
-                  <p style={{ color: "#999", fontSize: 12 }}>{new Date(doc.updated_at).toLocaleDateString('fr')}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+    <div style={{ padding: "28px clamp(16px,4vw,36px)", maxWidth: 820, margin: "0 auto" }}>
+      <PageHeader
+        title="Documents"
+        subtitle="Le coffre-fort du cercle : ordonnances, analyses, papiers importants."
+      />
+      <DocumentsManager initial={docs ?? []} familyId={ctx.family.id} parentId={ctx.parent?.id ?? null} />
     </div>
   );
 }
