@@ -55,7 +55,7 @@ export function Shell({
   const sidebarInner = (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: 20 }}>
       <div style={{ marginBottom: 26, paddingLeft: 6 }}>
-        <Logo size={26} color="#fff" mark="#fff" light />
+        <Logo size={26} color="#fff" mark={c.sage700} light />
       </div>
       <div style={{ background: "rgba(255,255,255,.08)", borderRadius: 14, padding: "12px 14px", marginBottom: 22 }}>
         <p style={{ fontSize: 12, color: "rgba(255,255,255,.55)", marginBottom: 2 }}>Cercle</p>
