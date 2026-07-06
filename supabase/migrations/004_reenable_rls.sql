@@ -1,0 +1,42 @@
+-- ============================================================================
+-- 004 — Réactivation du RLS sur families & family_members
+-- ============================================================================
+-- CONTEXTE
+--   Le RLS avait été désactivé manuellement sur `families` et `family_members`
+--   (workaround temporaire) à cause de soucis de permissions lors des écritures
+--   côté client pendant l'onboarding.
+--
+--   Depuis la refonte, toutes les écritures sensibles passent par des Server
+--   Actions utilisant le service_role (client admin), qui contourne le RLS après
+--   vérification d'appartenance côté serveur (voir src/lib/auth-guard.ts).
+--   Les lectures, elles, passent par le client authentifié et s'appuient sur les
+--   policies définies en 001 (is_family_member / is_family_admin, SECURITY DEFINER,
+--   donc sans récursion).
+--
+-- ⚠️  À TESTER en staging avant production : après application, vérifier que
+--     le dashboard charge bien (lecture families/family_members) pour un membre
+--     non-admin. Les policies existent déjà (migration 001) — on ne fait ici que
+--     réactiver l'enforcement.
+--
+-- Pour appliquer : coller dans le SQL Editor Supabase, ou `supabase db push`.
+-- ============================================================================
+
+alter table public.families       enable row level security;
+alter table public.family_members enable row level security;
+
+-- Rappel des policies déjà en place (migration 001), fournies ici pour référence.
+-- Décommenter uniquement si elles avaient été supprimées :
+--
+-- create policy "families_select" on public.families
+--   for select using (public.is_family_member(id));
+-- create policy "families_insert" on public.families
+--   for insert with check (auth.uid() = created_by);
+-- create policy "families_update" on public.families
+--   for update using (public.is_family_admin(id));
+--
+-- create policy "members_select" on public.family_members
+--   for select using (public.is_family_member(family_id));
+-- create policy "members_insert_admin" on public.family_members
+--   for insert with check (public.is_family_admin(family_id) or user_id = auth.uid());
+-- create policy "members_delete" on public.family_members
+--   for delete using (public.is_family_admin(family_id) or user_id = auth.uid());

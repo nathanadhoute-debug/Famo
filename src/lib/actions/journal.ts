@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireMembership } from "@/lib/auth-guard";
-import type { ActionResult } from "@/lib/actions/health";
+import type { ActionResult } from "@/lib/actions/types";
 
 /** Ajoute une note au journal partagé. */
 export async function addEntry(input: {

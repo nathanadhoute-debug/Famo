@@ -3,10 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireMembership } from "@/lib/auth-guard";
 import type { MemberRole } from "@/lib/family";
-
-export type InviteResult =
-  | { ok: true; token: string; emailSent: boolean }
-  | { ok: false; error: string };
+import type { InviteResult } from "@/lib/actions/types";
 
 /**
  * Crée une invitation à rejoindre un cercle et tente d'envoyer l'email.

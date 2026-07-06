@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireMembership } from "@/lib/auth-guard";
-import type { ActionResult } from "@/lib/actions/health";
+import type { ActionResult } from "@/lib/actions/types";
 
 const BUCKET = "documents";
 const MAX_SIZE = 15 * 1024 * 1024; // 15 Mo

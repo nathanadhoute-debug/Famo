@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireMembership } from "@/lib/auth-guard";
-import type { ActionResult } from "@/lib/actions/health";
+import type { ActionResult } from "@/lib/actions/types";
 
 /** Met à jour le nom affiché de l'utilisateur connecté. */
 export async function updateProfile(fullName: string): Promise<ActionResult> {

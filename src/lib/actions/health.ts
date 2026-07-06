@@ -2,8 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireMembership } from "@/lib/auth-guard";
-
-export type ActionResult = { ok: true } | { ok: false; error: string };
+import type { ActionResult } from "@/lib/actions/types";
 
 /** Enregistre un indicateur de santé (tension, poids, glycémie…). */
 export async function addVital(input: {

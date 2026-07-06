@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireMembership } from "@/lib/auth-guard";
-import type { ActionResult } from "@/lib/actions/health";
+import type { ActionResult } from "@/lib/actions/types";
 
 /** Programme une visite auprès du proche. */
 export async function addVisit(input: {
