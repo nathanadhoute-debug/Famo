@@ -54,3 +54,34 @@ export async function getCurrentFamily(): Promise<CurrentFamily | null> {
     parent: parent ?? null,
   };
 }
+
+export type FamilyMember = { userId: string; name: string; role: MemberRole; joinedAt: string };
+
+/**
+ * Membres du cercle avec leur nom d'affichage.
+ * On évite l'embed PostgREST `profiles(...)` (pas de FK directe entre
+ * family_members et profiles) : on récupère les profils séparément et on mappe.
+ */
+export async function getFamilyMembers(familyId: string): Promise<FamilyMember[]> {
+  const supabase = await createClient();
+
+  const { data: members } = await supabase
+    .from("family_members")
+    .select("user_id, role, joined_at")
+    .eq("family_id", familyId)
+    .order("joined_at", { ascending: true });
+
+  if (!members || members.length === 0) return [];
+
+  const ids = members.map((m) => m.user_id);
+  const { data: profiles } = await supabase
+    .from("profiles").select("id, full_name").in("id", ids);
+  const names = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
+
+  return members.map((m) => ({
+    userId: m.user_id,
+    name: names.get(m.user_id) || "Membre",
+    role: m.role as MemberRole,
+    joinedAt: m.joined_at,
+  }));
+}
