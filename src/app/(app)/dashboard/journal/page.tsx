@@ -19,7 +19,7 @@ export default function JournalPage() {
     if (!newEntry.trim()) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from("journal_entries").insert({ content: newEntry, author_id: user.id }).select().single();
+    const { data } = await supabase.from("journal_entries").insert({ content: newEntry, author_id: user.id } as any).select().single();
     if (data) setEntries([data, ...entries]);
     setNewEntry("");
   };
