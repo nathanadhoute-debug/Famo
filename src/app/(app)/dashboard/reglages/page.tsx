@@ -1,50 +1,38 @@
-'use client';
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentFamily, getFamilyMembers } from "@/lib/family";
+import { PageHeader } from "@/components/dashboard/Shell";
+import { SettingsManager } from "@/components/dashboard/SettingsManager";
 
-export default function ReglagesPage() {
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const supabase = createClient();
+export const metadata = { title: "Réglages — Famō" };
 
-  useEffect(() => {
-    async function loadProfile() {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      if (user) {
-        const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-        setProfile(data);
-      }
-    }
-    loadProfile();
-  }, []);
+export default async function ReglagesPage() {
+  const ctx = await getCurrentFamily();
+  if (!ctx) redirect("/onboarding");
+  const supabase = await createClient();
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
-  };
+  const [{ data: profile }, members, { data: invites }] = await Promise.all([
+    supabase.from("profiles").select("full_name").eq("id", ctx.user.id).maybeSingle(),
+    getFamilyMembers(ctx.family.id),
+    supabase.from("invitations")
+      .select("id, email, role")
+      .eq("family_id", ctx.family.id)
+      .is("accepted_at", null)
+      .order("created_at", { ascending: false }),
+  ]);
 
   return (
-    <div style={{ padding: 32 }}>
-      <h1 style={{ fontFamily: "'Fraunces',serif", fontSize: 24, marginBottom: 24 }}>Paramètres</h1>
-      <div style={{ background: "#fff", borderRadius: 12, padding: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", marginBottom: 20 }}>
-        <h2 style={{ fontFamily: "'Fraunces',serif", fontSize: 18, marginBottom: 16 }}>Profil</h2>
-        <div style={{ display: "grid", gap: 12 }}>
-          <div>
-            <p style={{ color: "#999", fontSize: 12 }}>Email</p>
-            <p style={{ fontWeight: 600 }}>{user?.email}</p>
-          </div>
-          {profile && (
-            <div>
-              <p style={{ color: "#999", fontSize: 12 }}>Nom complet</p>
-              <p style={{ fontWeight: 600 }}>{profile.full_name || "—"}</p>
-            </div>
-          )}
-        </div>
-      </div>
-      <button onClick={handleLogout} style={{ padding: "12px 20px", background: "#D97060", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>
-        Se déconnecter
-      </button>
+    <div style={{ padding: "28px clamp(16px,4vw,36px)", maxWidth: 720, margin: "0 auto" }}>
+      <PageHeader title="Réglages" subtitle="Votre profil et la gestion du cercle." />
+      <SettingsManager
+        profileName={profile?.full_name ?? ""}
+        family={ctx.family}
+        isAdmin={ctx.role === "admin"}
+        members={members.map((m) => ({ userId: m.userId, name: m.name, role: m.role }))}
+        pendingInvites={invites ?? []}
+        currentUserId={ctx.user.id}
+        userEmail={ctx.user.email ?? ""}
+      />
     </div>
   );
 }
