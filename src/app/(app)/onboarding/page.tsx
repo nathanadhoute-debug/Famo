@@ -18,7 +18,7 @@ export default function OnboardingPage() {
   const [parentName, setParentName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
-  const [invitesSent, setInvitesSent] = useState<string[]>([]);
+  const [invitesSent, setInvitesSent] = useState<{ email: string; link: string; emailSent: boolean }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const current = STEPS.indexOf(step);
@@ -47,7 +47,7 @@ export default function OnboardingPage() {
     const res = await createInvite({ familyId, email });
     setLoading(false);
     if (!res.ok) return setError(res.error);
-    setInvitesSent((prev) => [...prev, email]);
+    setInvitesSent((prev) => [...prev, { email, link: `${location.origin}/invite/${res.token}`, emailSent: res.emailSent }]);
     setInviteEmail("");
   };
 
@@ -141,11 +141,20 @@ export default function OnboardingPage() {
 
               {invitesSent.length > 0 && (
                 <div style={{ marginTop: 16, display: "grid", gap: 8 }}>
-                  {invitesSent.map((e) => (
-                    <div key={e} style={{ display: "flex", alignItems: "center", gap: 8, background: c.sage050, borderRadius: 10, padding: "9px 12px" }}>
-                      <span style={{ color: c.sage700 }}>✓</span>
-                      <span style={{ fontSize: 14, color: c.ink }}>{e}</span>
-                      <span style={{ marginLeft: "auto", fontSize: 12, color: c.muted }}>invité·e</span>
+                  {invitesSent.map((inv) => (
+                    <div key={inv.email} style={{ background: c.sage050, borderRadius: 10, padding: "9px 12px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ color: c.sage700 }}>✓</span>
+                        <span style={{ fontSize: 14, color: c.ink }}>{inv.email}</span>
+                        <span style={{ marginLeft: "auto", fontSize: 12, color: c.muted }}>{inv.emailSent ? "email envoyé" : "invité·e"}</span>
+                      </div>
+                      {!inv.emailSent && (
+                        <div style={{ marginTop: 8 }}>
+                          <p style={{ fontSize: 11.5, color: c.muted, marginBottom: 4 }}>Partagez ce lien :</p>
+                          <input readOnly value={inv.link} onFocus={(e) => e.currentTarget.select()}
+                            className="input" style={{ fontSize: 12, padding: "7px 10px", background: "#fff" }} />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

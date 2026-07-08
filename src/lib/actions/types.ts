@@ -5,5 +5,5 @@
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
 export type InviteResult =
-  | { ok: true; token: string; emailSent: boolean }
+  | { ok: true; token: string; emailSent: boolean; emailError?: string }
   | { ok: false; error: string };

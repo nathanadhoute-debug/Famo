@@ -41,30 +41,37 @@ export async function createInvite(input: {
       return { ok: false, error: error?.message ?? "Invitation impossible." };
     }
 
-    const emailSent = await trySendInviteEmail({
+    const sent = await trySendInviteEmail({
       email,
       token: invite.token,
       familyName: family?.name ?? "votre cercle",
     });
 
-    return { ok: true, token: invite.token, emailSent };
+    return { ok: true, token: invite.token, emailSent: sent.sent, emailError: sent.error };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Erreur inattendue." };
   }
 }
 
-/** Envoi d'email best-effort — n'importe Resend que si la clé est présente. */
-async function trySendInviteEmail(args: { email: string; token: string; familyName: string }): Promise<boolean> {
-  if (!process.env.RESEND_API_KEY) return false;
+/**
+ * Envoi d'email best-effort. Retourne la raison précise de l'échec (au lieu de
+ * l'avaler) pour que l'UI puisse l'afficher. L'expéditeur est configurable via
+ * RESEND_FROM (défaut : noreply@famo.health — nécessite un domaine vérifié dans Resend).
+ */
+async function trySendInviteEmail(args: { email: string; token: string; familyName: string }): Promise<{ sent: boolean; error?: string }> {
+  if (!process.env.RESEND_API_KEY) {
+    return { sent: false, error: "Envoi d'email non configuré (RESEND_API_KEY manquante)." };
+  }
   try {
     const { Resend } = await import("resend");
     const resend = new Resend(process.env.RESEND_API_KEY);
+    const from = process.env.RESEND_FROM ?? "Famō <noreply@famo.health>";
     const url = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://famo.health"}/invite/${args.token}`;
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    await resend.emails.send({
-      from: "Famō <noreply@famo.health>",
+    const { error } = await resend.emails.send({
+      from,
       to: args.email,
       subject: `Vous êtes invité·e à rejoindre « ${args.familyName} » sur Famō`,
       html: `
@@ -78,8 +85,10 @@ async function trySendInviteEmail(args: { email: string; token: string; familyNa
           <p style="font-size:12px;color:#999;">Lien valable 7 jours. Si vous n'attendiez pas cet email, ignorez-le.</p>
         </div>`,
     });
-    return true;
-  } catch {
-    return false;
+
+    if (error) return { sent: false, error: error.message };
+    return { sent: true };
+  } catch (e) {
+    return { sent: false, error: e instanceof Error ? e.message : "Échec de l'envoi." };
   }
 }

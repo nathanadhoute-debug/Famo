@@ -112,18 +112,27 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
 }) {
   const router = useRouter();
   const [email, setEmail] = useState(""); const [role, setRole] = useState("member");
-  const [err, setErr] = useState(""); const [info, setInfo] = useState("");
+  const [err, setErr] = useState("");
+  const [result, setResult] = useState<{ email: string; link: string; emailSent: boolean; emailError?: string } | null>(null);
+  const [copied, setCopied] = useState(false);
   const [pending, start] = useTransition();
 
   const invite = () => {
     if (!email.trim()) return;
-    setErr(""); setInfo("");
+    setErr(""); setResult(null); setCopied(false);
+    const target = email.trim();
     start(async () => {
-      const r = await createInvite({ familyId: family.id, email, role: role as any });
+      const r = await createInvite({ familyId: family.id, email: target, role: role as any });
       if (!r.ok) return setErr(r.error);
-      setInfo(r.emailSent ? `Invitation envoyée à ${email}.` : `Invitation créée. Lien : ${location.origin}/invite/${r.token}`);
+      setResult({ email: target, link: `${location.origin}/invite/${r.token}`, emailSent: r.emailSent, emailError: r.emailError });
       setEmail(""); router.refresh();
     });
+  };
+
+  const copyLink = async () => {
+    if (!result) return;
+    try { await navigator.clipboard.writeText(result.link); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    catch { /* clipboard indisponible */ }
   };
   const kick = (userId: string) => start(async () => { const r = await removeMember(family.id, userId); if (!r.ok) return setErr(r.error); router.refresh(); });
   const cancel = (id: string) => start(async () => { const r = await cancelInvite(id); if (!r.ok) return setErr(r.error); router.refresh(); });
@@ -187,7 +196,29 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
       )}
 
       {err && <p style={{ color: c.danger, fontSize: 13.5, marginTop: 12 }}>{err}</p>}
-      {info && <p style={{ color: c.success, fontSize: 13.5, marginTop: 12, wordBreak: "break-all" }}>{info}</p>}
+
+      {result && (
+        <div style={{ marginTop: 16, border: `1px solid ${c.hairline}`, borderRadius: 12, padding: "14px 16px", background: c.card }}>
+          {result.emailSent ? (
+            <p style={{ fontSize: 13.5, color: c.success, margin: 0, display: "flex", alignItems: "center", gap: 7 }}>
+              <Icon name="check" size={16} /> Invitation envoyée à {result.email}.
+            </p>
+          ) : (
+            <p style={{ fontSize: 13, color: c.sub, margin: 0, lineHeight: 1.5 }}>
+              Invitation créée pour <strong style={{ color: c.sage900 }}>{result.email}</strong>.
+              L'email n'a pas pu être envoyé{result.emailError ? ` (${result.emailError})` : ""} —
+              partagez ce lien directement&nbsp;:
+            </p>
+          )}
+          <div style={{ display: "flex", gap: 8, marginTop: 12, alignItems: "center" }}>
+            <input readOnly value={result.link} onFocus={(e) => e.currentTarget.select()}
+              className="input" style={{ flex: 1, fontSize: 12.5, color: c.sub }} />
+            <button onClick={copyLink} className="btn" style={{ background: c.sage900, color: "#F4F2EC", borderRadius: 9, padding: "9px 14px", fontSize: 13, whiteSpace: "nowrap" }}>
+              <Icon name={copied ? "check" : "file-text"} size={15} /> {copied ? "Copié" : "Copier"}
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
