@@ -1,12 +1,25 @@
 import { font } from "@/lib/theme";
 
-/** Logo Famō — pictogramme feuille dans un carré vert + mot-symbole. */
-export function Logo({ size = 26, color = "#233F36", mark = "#3A6B5E", light = false }: {
+/**
+ * Logo Famō. Le macron du « ō » n'est JAMAIS le glyphe Unicode de la police
+ * (rendu instable, mal aligné) : il est dessiné en CSS via `.fm-o::after`
+ * (voir globals.css). On écrit donc « Fam » + un <span class="fm-o">o</span>.
+ */
+export function Logo({ size = 26, color = "#233F36", mark = "#3A6B5E", light = false, wordmarkOnly = false }: {
   size?: number;
   color?: string;
   mark?: string;
   light?: boolean;
+  wordmarkOnly?: boolean;
 }) {
+  const wordmark = (
+    <span style={{ fontFamily: font.display, fontSize: size * 0.76, fontWeight: 600, color, letterSpacing: "-0.01em" }}>
+      Fam<span className="fm-o">o</span>
+    </span>
+  );
+
+  if (wordmarkOnly) return wordmark;
+
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
       <svg width={size} height={size} viewBox="0 0 28 28" fill="none" aria-hidden>
@@ -16,9 +29,7 @@ export function Logo({ size = 26, color = "#233F36", mark = "#3A6B5E", light = f
           fill={light ? mark : "#fff"}
         />
       </svg>
-      <span style={{ fontFamily: font.display, fontSize: size * 0.76, fontWeight: 600, color, letterSpacing: "-0.01em" }}>
-        Famō
-      </span>
+      {wordmark}
     </span>
   );
 }
