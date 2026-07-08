@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentFamily } from "@/lib/family";
-import { PageHeader } from "@/components/dashboard/Shell";
+import { PageHead } from "@/components/dashboard/editorial";
 import { VitalsManager } from "@/components/dashboard/VitalsManager";
 
 export const metadata = { title: "Santé — Famō" };
@@ -18,10 +18,11 @@ export default async function SantePage() {
     .order("recorded_at", { ascending: false });
 
   return (
-    <div style={{ padding: "28px clamp(16px,4vw,36px)", maxWidth: 820, margin: "0 auto" }}>
-      <PageHeader
-        title="Santé"
-        subtitle={ctx.parent ? `Suivi de ${ctx.parent.name}` : "Suivi des indicateurs"}
+    <div style={{ maxWidth: 820, margin: "0 auto", padding: "clamp(20px,3vw,34px) clamp(16px,4vw,36px) 48px" }}>
+      <PageHead
+        eyebrow="Santé"
+        title={ctx.parent ? `Suivi de ${ctx.parent.name.split(/\s+/)[0]}` : "Suivi santé"}
+        subtitle="Tension, poids, glycémie et plus"
       />
       <VitalsManager initial={vitals ?? []} familyId={ctx.family.id} parentId={ctx.parent?.id ?? null} />
     </div>

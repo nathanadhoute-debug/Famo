@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentFamily, getFamilyMembers } from "@/lib/family";
-import { PageHeader } from "@/components/dashboard/Shell";
+import { PageHead } from "@/components/dashboard/editorial";
 import { SettingsManager } from "@/components/dashboard/SettingsManager";
 
 export const metadata = { title: "Réglages — Famō" };
@@ -22,8 +22,8 @@ export default async function ReglagesPage() {
   ]);
 
   return (
-    <div style={{ padding: "28px clamp(16px,4vw,36px)", maxWidth: 720, margin: "0 auto" }}>
-      <PageHeader title="Réglages" subtitle="Votre profil et la gestion du cercle." />
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "clamp(20px,3vw,34px) clamp(16px,4vw,36px) 48px" }}>
+      <PageHead eyebrow="Réglages" title="Votre cercle" subtitle={`Profil et membres de ${ctx.family.name}`} />
       <SettingsManager
         profileName={profile?.full_name ?? ""}
         family={ctx.family}

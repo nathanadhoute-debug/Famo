@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentFamily, getFamilyMembers } from "@/lib/family";
-import { PageHeader } from "@/components/dashboard/Shell";
+import { PageHead } from "@/components/dashboard/editorial";
 import { VisitsManager } from "@/components/dashboard/VisitsManager";
 
 export const metadata = { title: "Relais — Famō" };
@@ -26,10 +26,11 @@ export default async function RelaisPage() {
   }
 
   return (
-    <div style={{ padding: "28px clamp(16px,4vw,36px)", maxWidth: 820, margin: "0 auto" }}>
-      <PageHeader
-        title="Relais"
-        subtitle="Organisez qui passe voir votre proche, et quand."
+    <div style={{ maxWidth: 820, margin: "0 auto", padding: "clamp(20px,3vw,34px) clamp(16px,4vw,36px) 48px" }}>
+      <PageHead
+        eyebrow="Relais"
+        title="Qui passe, et quand"
+        subtitle="Organisez le relais de la semaine"
       />
       <VisitsManager
         initial={visits ?? []}

@@ -115,20 +115,3 @@ export function Shell({
     </div>
   );
 }
-
-/** En-tête de page réutilisable dans le dashboard. */
-export function PageHeader({ title, subtitle, action }: {
-  title: string;
-  subtitle?: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 26, flexWrap: "wrap" }}>
-      <div>
-        <h1 style={{ fontFamily: font.display, fontSize: 30, color: c.sage900 }}>{title}</h1>
-        {subtitle && <p style={{ color: c.muted, fontSize: 15, marginTop: 6 }}>{subtitle}</p>}
-      </div>
-      {action}
-    </div>
-  );
-}
