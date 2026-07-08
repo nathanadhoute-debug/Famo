@@ -3,15 +3,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/Logo";
+import { Icon } from "@/components/Icon";
 import { c, font } from "@/lib/theme";
 
 const NAV = [
-  { href: "/dashboard",           label: "Accueil",   icon: "🏠" },
-  { href: "/dashboard/sante",     label: "Santé",     icon: "💚" },
-  { href: "/dashboard/relais",    label: "Relais",    icon: "🤝" },
-  { href: "/dashboard/journal",   label: "Journal",   icon: "📔" },
-  { href: "/dashboard/documents", label: "Documents", icon: "🗂️" },
-  { href: "/dashboard/reglages",  label: "Réglages",  icon: "⚙️" },
+  { href: "/dashboard",           label: "Accueil",   icon: "home" },
+  { href: "/dashboard/sante",     label: "Santé",     icon: "activity" },
+  { href: "/dashboard/relais",    label: "Relais",    icon: "users" },
+  { href: "/dashboard/journal",   label: "Journal",   icon: "book" },
+  { href: "/dashboard/documents", label: "Documents", icon: "folder" },
+  { href: "/dashboard/reglages",  label: "Réglages",  icon: "settings" },
 ];
 
 export function Shell({
@@ -44,7 +45,7 @@ export function Shell({
               transition: "background .15s, color .15s",
             }}
           >
-            <span style={{ fontSize: 18, width: 22, textAlign: "center" }}>{item.icon}</span>
+            <Icon name={item.icon} size={19} stroke={active ? 1.9 : 1.6} />
             {item.label}
           </Link>
         );
@@ -77,7 +78,7 @@ export function Shell({
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: c.cream }}>
+    <div style={{ minHeight: "100vh", background: c.creamPage }}>
       <style>{`
         .dash-sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 250px;
           background: ${c.sage900}; z-index: 40; }
@@ -96,13 +97,13 @@ export function Shell({
       {/* Barre du haut (mobile) */}
       <div className="dash-topbar" style={{
         position: "sticky", top: 0, zIndex: 30, height: 58, alignItems: "center", gap: 12,
-        padding: "0 16px", background: "rgba(244,242,236,.9)", backdropFilter: "blur(10px)",
-        borderBottom: `1px solid ${c.line}`,
+        padding: "0 16px", background: "rgba(249,247,240,.9)", backdropFilter: "blur(10px)",
+        borderBottom: `1px solid ${c.hairline}`,
       }}>
         <button onClick={() => setOpen(true)} aria-label="Menu" style={{
-          background: "transparent", border: "none", cursor: "pointer", padding: 6, display: "grid", gap: 4,
+          background: "transparent", border: "none", cursor: "pointer", padding: 6, display: "flex", color: c.sage900,
         }}>
-          {[0, 1, 2].map((i) => <span key={i} style={{ width: 22, height: 2, background: c.sage900, borderRadius: 2 }} />)}
+          <Icon name="menu" size={22} />
         </button>
         <Logo size={22} />
       </div>
