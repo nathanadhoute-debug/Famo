@@ -22,7 +22,10 @@ export default function SignupPage() {
     const { data, error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
-      options: { data: { full_name: form.name.trim() } },
+      options: {
+        data: { full_name: form.name.trim() },
+        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+      },
     });
     if (error) { setError(error.message); setLoading(false); return; }
     // Selon la config Supabase, la session peut nécessiter une confirmation d'email.

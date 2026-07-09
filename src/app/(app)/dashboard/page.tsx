@@ -5,6 +5,7 @@ import { getCurrentFamily, getFamilyMembers } from "@/lib/family";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline, Avatar, Sparkline } from "@/components/dashboard/editorial";
 import { initials, timeAgo, parseNumeric, mondayOf } from "@/lib/format";
+import { deriveParentStatus } from "@/lib/status";
 import { c, font } from "@/lib/theme";
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -36,7 +37,7 @@ export default async function DashboardHome() {
         .order("visit_date", { ascending: true }).limit(1),
       supabase.from("vitals").select("label, value, unit, recorded_at")
         .eq("family_id", ctx.family.id).order("recorded_at", { ascending: false }).limit(40),
-      supabase.from("journal_entries").select("content, author_id, created_at")
+      supabase.from("journal_entries").select("content, tags, author_id, created_at")
         .eq("family_id", ctx.family.id).order("created_at", { ascending: false }).limit(1),
     ]);
 
@@ -69,18 +70,17 @@ export default async function DashboardHome() {
   // Journal
   const lastEntry = journalRaw?.[0] ?? null;
 
-  // Statut & dernière mise à jour
+  // État global du proche, dérivé des vraies données (médicaments, santé, journal).
   const parentFirst = ctx.parent?.name.split(/\s+/)[0] ?? null;
-  const statusLine = !ctx.parent
-    ? "Bienvenue dans votre cercle"
-    : overdue > 0
-      ? `${parentFirst} a besoin d'attention aujourd'hui`
-      : `${parentFirst} va bien aujourd'hui`;
-  const lastUpdate = lastEntry
-    ? `Dernière note de ${nameById(lastEntry.author_id)} · ${timeAgo(lastEntry.created_at)}`
-    : latestVital
-      ? `Dernière mesure · ${timeAgo(latestVital.recorded_at)}`
-      : "Votre cercle vient d'être créé";
+  const status = deriveParentStatus({
+    parentFirstName: parentFirst,
+    overdueDoses: overdue,
+    vitals,
+    lastEntry: lastEntry
+      ? { content: lastEntry.content, tags: lastEntry.tags ?? [], created_at: lastEntry.created_at, authorName: nameById(lastEntry.author_id) ?? "Membre" }
+      : null,
+  });
+  const dotColor = status.tone === "attention" ? c.terracotta : c.sage600;
 
   return (
     <div style={{ maxWidth: 860, margin: "0 auto", padding: "clamp(20px,3vw,34px) clamp(16px,4vw,36px) 48px" }}>
@@ -111,13 +111,13 @@ export default async function DashboardHome() {
             </div>
           </div>
 
-          <h1 style={{ fontFamily: font.display, fontSize: "clamp(26px,4vw,32px)", fontWeight: 500, lineHeight: 1.3, color: "#F4F2EC", margin: 0, maxWidth: 460, letterSpacing: "-0.2px" }}>
-            {statusLine}
+          <h1 style={{ fontFamily: font.display, fontSize: "clamp(26px,4vw,32px)", fontWeight: 500, lineHeight: 1.3, color: "#F4F2EC", margin: 0, maxWidth: 500, letterSpacing: "-0.2px" }}>
+            {status.line}
           </h1>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 18, marginTop: 20, borderTop: "1px solid rgba(244,242,236,0.12)" }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: c.terracotta, display: "inline-block" }} />
-            <span style={{ fontSize: 12.5, color: "#93A89A" }}>{lastUpdate}</span>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 9, paddingTop: 18, marginTop: 20, borderTop: "1px solid rgba(244,242,236,0.12)" }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: dotColor, display: "inline-block", marginTop: 6, flexShrink: 0 }} />
+            <span style={{ fontSize: 13, color: "#B7C6BC", lineHeight: 1.5 }}>{status.detail}</span>
           </div>
         </div>
       </section>

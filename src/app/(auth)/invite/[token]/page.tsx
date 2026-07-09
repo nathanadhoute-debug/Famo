@@ -40,7 +40,14 @@ export default function InvitePage() {
     setError("");
     const { error } =
       mode === "signup"
-        ? await supabase.auth.signUp({ email: form.email, password: form.password, options: { data: { full_name: form.name.trim() } } })
+        ? await supabase.auth.signUp({
+            email: form.email,
+            password: form.password,
+            options: {
+              data: { full_name: form.name.trim() },
+              emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(`/invite/${token}`)}`,
+            },
+          })
         : await supabase.auth.signInWithPassword({ email: form.email, password: form.password });
     if (error) { setError(error.message); return; }
     await accept();
