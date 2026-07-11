@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireMembership } from "@/lib/auth-guard";
 import type { MemberRole } from "@/lib/family";
 import type { InviteResult } from "@/lib/actions/types";
+import { SITE_URL } from "@/lib/site";
 
 /**
  * Crée une invitation à rejoindre un cercle et tente d'envoyer l'email.
@@ -66,7 +67,7 @@ async function trySendInviteEmail(args: { email: string; token: string; familyNa
     const { Resend } = await import("resend");
     const resend = new Resend(process.env.RESEND_API_KEY);
     const from = process.env.RESEND_FROM ?? "Famō <noreply@famo.health>";
-    const url = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://famo.health"}/invite/${args.token}`;
+    const url = `${SITE_URL}/invite/${args.token}`;
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 

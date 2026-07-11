@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title:       "Famō — Coordination familiale pour vos proches",
   description: "Planning des visites, médicaments, journal partagé. Tout ce qui compte pour prendre soin d'un parent âgé, au même endroit.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://famo.health"),
+  metadataBase: new URL(SITE_URL),
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
