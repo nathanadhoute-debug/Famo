@@ -17,14 +17,14 @@ export default function InvitePage() {
 
   const accept = async () => {
     setStatus("accepting");
-    try {
-      await acceptInvitation(token);
-      router.push("/dashboard");
-      router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Invitation invalide.");
+    const res = await acceptInvitation(token);
+    if (!res.ok) {
+      setError(res.error);
       setStatus("error");
+      return;
     }
+    router.push("/dashboard");
+    router.refresh();
   };
 
   useEffect(() => {
