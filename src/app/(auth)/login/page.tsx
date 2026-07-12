@@ -41,6 +41,9 @@ export default function LoginPage() {
           onChange={(v) => setForm((f) => ({ ...f, email: v }))} placeholder="vous@exemple.fr" />
         <Field label="Mot de passe" type="password" value={form.password} autoComplete="current-password"
           onChange={(v) => setForm((f) => ({ ...f, password: v }))} placeholder="••••••••" />
+        <div style={{ textAlign: "right", marginTop: -8, marginBottom: 16 }}>
+          <Link href="/forgot-password" style={{ color: "#66756F", fontSize: 13.5 }}>Mot de passe oublié ?</Link>
+        </div>
         {error && <p style={{ color: "#B04B3C", fontSize: 13.5, marginBottom: 12 }}>{error}</p>}
         <button type="submit" className="btn btn-primary" style={{ width: "100%" }} disabled={loading}>
           {loading ? "Connexion…" : "Se connecter"}
