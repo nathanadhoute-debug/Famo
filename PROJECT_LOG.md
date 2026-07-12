@@ -49,15 +49,42 @@ Cause similaire : `NEXT_PUBLIC_APP_URL` avait une mauvaise valeur enregistrée d
 ### 5. Message d'erreur de la page d'invitation illisible
 Cause : `acceptInvitation()` (`lib/invitations.ts`) utilisait `throw new Error(...)`, appelé directement depuis un composant client. **Next.js masque automatiquement le message des exceptions qui traversent la frontière serveur→client d'une Server Action en production** (sécurité, remplacé par un message générique anglais). Fix : conversion au pattern `{ ok, error }` utilisé partout ailleurs dans le code (les autres actions ne souffraient pas de ce bug car leurs `throw`, via `requireMembership()`, sont interceptés **côté serveur** avant de repartir vers le client).
 
+## Phase 4 — Config Supabase, sécurité RLS, mot de passe oublié, favicon (quatrième chantier, 12/07/2026)
+
+### 1. Lien de confirmation email → redirigeait vers `localhost:3000`
+Cause : contrairement à la Phase 3 #2/#4 (déjà réglées côté code), ici le problème était purement dans le **dashboard Supabase** (Authentication → URL Configuration), jamais synchronisé avec le domaine prod : **Site URL** était resté sur `localhost:3000` et **Redirect URLs** était complètement vide. Supabase ignore `emailRedirectTo` si l'URL n'est pas dans la liste blanche Redirect URLs, et retombe sur le Site URL par défaut. Fix (dashboard, pas de code) : Site URL → `https://famo.health`, Redirect URLs → `https://famo.health/**`.
+
+### 2. `email rate limit exceeded` en créant des comptes
+Cause : les emails de confirmation d'inscription passaient par le mailer intégré gratuit de Supabase (expéditeur "Supabase Auth"), limité à quelques emails/heure — épuisé après plusieurs tests de signup. Différent des emails d'invitation, qui passent par Resend directement via `lib/actions/invites.ts`. Fix : **SMTP personnalisé activé** dans Supabase (Authentication → Emails → SMTP Settings) pointant vers Resend (`smtp.resend.com:465`, user `resend`, nouvelle clé API Resend dédiée `famo-smtp-supabase`, distincte de la clé prod existante pour ne pas la toucher). Limite passée à 30 emails/heure (ajustable). Tous les emails auth (confirmation, reset password) partent maintenant via Resend, expéditeur "Famō".
+
+### 3. Flux d'invitation : faux message d'erreur après inscription
+Cause : sur `/invite/[token]`, `handleAuth()` appelait `accept()` immédiatement après `signUp()`, sans vérifier qu'une session existait — or avec confirmation email obligatoire, `signUp()` ne crée pas de session tant que le lien n'est pas cliqué. Résultat : message "Invitation invalide — vous devez être connecté" juste après une inscription pourtant réussie. Fix : `src/app/(auth)/invite/[token]/page.tsx` vérifie `data.session` après `signUp()` ; si absent, affiche un écran "Vérifiez vos emails" au lieu d'appeler `accept()` prématurément.
+
+### 4. Ajout du flux "mot de passe oublié"
+N'existait pas du tout. Ajouté : lien sur `/login`, page `/forgot-password` (`resetPasswordForEmail`, message identique que l'email existe ou non — anti-énumération), page `/reset-password` (`updateUser({ password })`, vérifie qu'une session de récupération existe). Passe par la route `/auth/confirm` existante, inchangée. `middleware.ts` : ces deux routes ajoutées aux `publicRoutes`.
+
+### 5. Réactivation de RLS sur `families` / `family_members`
+La migration `004_reenable_rls.sql` (écrite en Phase 1, jamais appliquée) a été exécutée manuellement dans le SQL Editor Supabase. Vérification préalable : les 6 policies de la migration 001 (`families_select/insert/update`, `members_select/insert_admin/delete`) existaient toujours en base (`select * from pg_policies where tablename in (...)`) malgré RLS désactivé — donc `enable row level security` a suffi, pas besoin de recréer les policies. Toutes les écritures passent déjà par le client admin (bypass RLS), toutes les lectures identifiées (`lib/family.ts`, `lib/auth-guard.ts`) sont déjà correctement scopées par `user_id`/`family_id` → aucune régression attendue. Vérifié fonctionnel avec le compte admin. Rollback si besoin : `alter table public.families/family_members disable row level security;`.
+
+### 6. Favicon : logo Vercel par défaut au lieu du logo Famō
+Cause : `src/app/favicon.ico` était resté le fichier par défaut de `create-next-app` (contient littéralement le logo Vercel — triangle noir) depuis le tout début du projet, jamais remplacé. De plus, aucune icône pour les aperçus de lien iOS/iMessage (`apple-touch-icon`) n'existait. Fix : `src/app/icon.tsx` et `src/app/apple-icon.tsx` génèrent le mark du logo (carré sauge + cœur) via `next/og` (`ImageResponse`), pas d'image statique à gérer. `favicon.ico` par défaut supprimé.
+
+**Bug additionnel découvert en testant** : le matcher du middleware n'excluait que `favicon.ico`, donc `/icon` et `/apple-icon` étaient interceptés comme des pages protégées — un crawler sans session (Apple, curl) recevait une redirection 307 vers `/login` au lieu de l'image. Fix : ajout de `icon|apple-icon` à l'exclusion du matcher.
+
+**Piège à connaître** : même après le fix (vérifié correct côté serveur : `/favicon.ico` → 404, `/icon` et `/apple-icon` → 200 avec la bonne image), l'ancienne icône peut continuer à s'afficher dans Safari/iMessage sur tous les appareils (y compris navigation privée) — c'est le **cache d'icônes propre à Apple** (partagé via iCloud pour l'historique, les suggestions, les Top Sites), pas un bug résiduel côté app. Se corrige tout seul en quelques jours, rien à re-déboguer si ça revient.
+
+### 7. Ajustement mineur du macron du logo
+Taille réduite (`0.58em/0.085em` → `0.5em/0.07em` dans `.fm-o::after`, `globals.css`) sur demande, cosmétique uniquement.
+
 ## État actuel (déployé sur famo.health)
 
-✅ Fonctionnel : landing, auth (login/signup/confirmation email), onboarding, dashboard (6 pages, design éditorial), invitations (création, email, acceptation), connexion Supabase (avec filet de sécurité en dur).
+✅ Fonctionnel : landing, auth (login/signup/confirmation email/**mot de passe oublié**), onboarding, dashboard (6 pages, design éditorial), invitations (création, email, acceptation), connexion Supabase (avec filet de sécurité en dur), **SMTP personnalisé Resend pour tous les emails auth**, **RLS actif sur families/family_members**, **favicon/icônes de lien corrects**.
 
 ⚠️ Pas encore fait :
-- **RLS désactivé** sur `families`/`family_members` — migration `supabase/migrations/004_reenable_rls.sql` écrite mais **non appliquée**. À tester en staging avant activation.
-- **Stripe** : infra présente (`lib/stripe.ts`, webhook, cron) mais non branchée à l'UI, pas de mur de paiement.
+- **Stripe** : infra présente (`lib/stripe.ts`, webhook, cron) mais non branchée à l'UI, pas de mur de paiement. **Prochain gros chantier.**
 - **Réputation email Resend** : domaine vérifié mais jeune, les emails peuvent atterrir en spam au début.
-- **Crons** (`daily-doses`, `rx-expiry`, `visit-reminder`) : présents mais pas vérifiés/testés dans cette session.
+- **Crons** (`daily-doses`, `rx-expiry`, `visit-reminder`) : présents mais pas vérifiés/testés.
+- Test RLS avec un compte membre non-admin non réalisé (seul le compte admin a été vérifié après réactivation) — à garder en tête si un membre signale un souci d'affichage.
 
 ## Règles à ne jamais casser
 
@@ -66,3 +93,5 @@ Cause : `acceptInvitation()` (`lib/invitations.ts`) utilisait `throw new Error(.
 3. **Server Actions** : toujours retourner `{ ok, error }`, jamais `throw` directement vers un composant client (sinon Next.js masque le message en production).
 4. **Écritures sensibles** : toujours via Server Action + `requireMembership()` + client admin, jamais insert client direct.
 5. Pas de Node/npm installé sur la machine de dev habituelle — validation par build Vercel au push, pas de build local possible.
+6. **Config Supabase Auth (Site URL, Redirect URLs, SMTP Settings) vit dans le dashboard, pas dans le code/git** — si un comportement d'auth casse sans changement de code correspondant, vérifier ces réglages en premier avant de chercher un bug applicatif.
+7. **Nouvelle route publique ajoutée dans `app/`** (favicon, icônes, futures routes techniques) → toujours vérifier qu'elle est exclue du matcher de `middleware.ts`, sinon elle sera traitée comme une page protégée et redirigée vers `/login`.
