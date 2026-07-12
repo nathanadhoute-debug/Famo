@@ -10,7 +10,7 @@ export default function InvitePage() {
   const { token } = useParams<{ token: string }>();
   const router = useRouter();
   const supabase = createClient();
-  const [status, setStatus] = useState<"loading" | "auth" | "accepting" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "auth" | "accepting" | "error" | "check-email">("loading");
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [form, setForm] = useState({ email: "", password: "", name: "" });
@@ -38,17 +38,22 @@ export default function InvitePage() {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    const { error } =
-      mode === "signup"
-        ? await supabase.auth.signUp({
-            email: form.email,
-            password: form.password,
-            options: {
-              data: { full_name: form.name.trim() },
-              emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(`/invite/${token}`)}`,
-            },
-          })
-        : await supabase.auth.signInWithPassword({ email: form.email, password: form.password });
+    if (mode === "signup") {
+      const { data, error } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          data: { full_name: form.name.trim() },
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(`/invite/${token}`)}`,
+        },
+      });
+      if (error) { setError(error.message); return; }
+      // Confirmation email requise : pas de session tant que le lien n'est pas cliqué.
+      if (!data.session) { setStatus("check-email"); return; }
+      await accept();
+      return;
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email: form.email, password: form.password });
     if (error) { setError(error.message); return; }
     await accept();
   };
@@ -58,6 +63,17 @@ export default function InvitePage() {
       <AuthShell title="Rejoindre le cercle" sub="Un instant…">
         <p style={{ textAlign: "center", padding: "24px 0", color: "#66756F" }}>
           {status === "accepting" ? "Activation de votre accès…" : "Chargement…"}
+        </p>
+      </AuthShell>
+    );
+  }
+
+  if (status === "check-email") {
+    return (
+      <AuthShell title="Vérifiez vos emails" sub="Une dernière étape">
+        <p style={{ color: "#66756F", fontSize: 14, lineHeight: 1.6 }}>
+          Nous avons envoyé un lien de confirmation à <strong>{form.email}</strong>. Cliquez dessus pour activer
+          votre compte — vous rejoindrez alors automatiquement le cercle.
         </p>
       </AuthShell>
     );
