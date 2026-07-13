@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
 
   // Routes accessibles sans être connecté. "/" est la landing publique.
   // "/auth" couvre le callback de confirmation email (/auth/confirm).
-  const publicRoutes = ["/login", "/signup", "/invite", "/auth", "/forgot-password", "/reset-password"];
+  const publicRoutes = ["/login", "/signup", "/invite", "/auth", "/forgot-password", "/reset-password", "/confidentialite"];
   const isPublic = pathname === "/" || publicRoutes.some((r) => pathname.startsWith(r));
 
   if (!user && !isPublic) {

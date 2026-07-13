@@ -161,7 +161,10 @@ export default function LandingPage() {
       {/* Footer ----------------------------------------------------- */}
       <footer className="lp-wrap" style={{ padding: "32px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
         <Logo size={22} />
-        <p style={{ color: c.muted, fontSize: 13.5 }}>© {new Date().getFullYear()} Famō · famo.health · Fait avec soin en France</p>
+        <p style={{ color: c.muted, fontSize: 13.5 }}>
+          © {new Date().getFullYear()} Famō · famo.health · Fait avec soin en France ·{" "}
+          <Link href="/confidentialite" style={{ color: c.muted, textDecoration: "underline" }}>Confidentialité</Link>
+        </p>
       </footer>
     </div>
   );
