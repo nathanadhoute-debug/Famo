@@ -17,7 +17,7 @@ export async function GET(req: Request) {
 
   const { data: visits, error } = await admin
     .from("visits")
-    .select("family_id, visitor_id, parents(name)")
+    .select("family_id, parent_id, visitor_id")
     .eq("visit_date", tomorrowDate)
     .not("visitor_id", "is", null);
 
@@ -25,7 +25,11 @@ export async function GET(req: Request) {
 
   let remindersSent = 0;
   for (const visit of visits ?? []) {
-    const parentName = (visit.parents as { name: string } | null)?.name ?? "votre proche";
+    // Pas d'embed PostgREST visits->parents : le fichier de types Supabase
+    // est maintenu à la main sans métadonnées de relations, ce qui casse le
+    // typage de l'embed même si la clé étrangère existe bien en base.
+    const { data: parent } = await admin.from("parents").select("name").eq("id", visit.parent_id).maybeSingle();
+    const parentName = parent?.name ?? "votre proche";
 
     const { data: visitor } = await admin
       .from("profiles").select("full_name").eq("id", visit.visitor_id!).maybeSingle();

@@ -23,16 +23,25 @@ export async function GET(req: Request) {
 
   const { data: meds, error } = await admin
     .from("medications")
-    .select("family_id, name, rx_label, parents(name)")
+    .select("family_id, parent_id, name, rx_label")
     .eq("active", true)
     .eq("rx_expires_at", targetDate);
 
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
 
+  // Pas d'embed PostgREST medications->parents : le fichier de types Supabase
+  // est maintenu à la main sans métadonnées de relations, ce qui casse le
+  // typage de l'embed même si la clé étrangère existe bien en base.
+  const parentIds = [...new Set((meds ?? []).map((m) => m.parent_id))];
+  const { data: parents } = parentIds.length > 0
+    ? await admin.from("parents").select("id, name").in("id", parentIds)
+    : { data: [] };
+  const parentNames = new Map((parents ?? []).map((p) => [p.id, p.name]));
+
   const byFamily = new Map<string, { medName: string; rxLabel: string | null; parentName: string }[]>();
   for (const m of meds ?? []) {
     const list = byFamily.get(m.family_id) ?? [];
-    list.push({ medName: m.name, rxLabel: m.rx_label, parentName: (m.parents as { name: string } | null)?.name ?? "votre proche" });
+    list.push({ medName: m.name, rxLabel: m.rx_label, parentName: parentNames.get(m.parent_id) ?? "votre proche" });
     byFamily.set(m.family_id, list);
   }
 
