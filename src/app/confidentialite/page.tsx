@@ -178,7 +178,7 @@ export default function ConfidentialitePage() {
         <P>
           Il est expressément précisé qu&apos;<strong>aucune donnée n&apos;est utilisée à des fins de prospection
           commerciale, de profilage publicitaire, de revente à des tiers, ni de prise de décision entièrement
-          automatisée</strong> produisant des effets juridiques au sens de l&apos;article 22 du RGPD.
+          automatisée</strong>{" "}produisant des effets juridiques au sens de l&apos;article 22 du RGPD.
         </P>
 
         <H2>6. Destinataires des données</H2>
