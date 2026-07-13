@@ -54,6 +54,73 @@ export async function deleteVital(vitalId: string): Promise<ActionResult> {
   }
 }
 
+/** Ajoute un médicament, avec ses horaires de prise éventuels. */
+export async function addMedication(input: {
+  familyId: string;
+  parentId: string;
+  name: string;
+  dose: string;
+  category?: string;
+  critical?: boolean;
+  rxLabel?: string;
+  rxExpiresAt?: string;
+  times: string[];
+}): Promise<ActionResult> {
+  if (!input.name.trim() || !input.dose.trim()) {
+    return { ok: false, error: "Indiquez un nom et une dose." };
+  }
+  try {
+    await requireMembership(input.familyId);
+    const admin = createAdminClient();
+    const { data: med, error } = await admin
+      .from("medications")
+      .insert({
+        family_id:     input.familyId,
+        parent_id:     input.parentId,
+        name:          input.name.trim(),
+        dose:          input.dose.trim(),
+        category:      input.category || "Autre",
+        critical:      input.critical ?? false,
+        rx_label:      input.rxLabel?.trim() || null,
+        rx_expires_at: input.rxExpiresAt || null,
+      })
+      .select("id")
+      .single();
+    if (error || !med) return { ok: false, error: error?.message ?? "Ajout impossible." };
+
+    const times = input.times.map((t) => t.trim()).filter(Boolean);
+    if (times.length > 0) {
+      const { error: schedError } = await admin
+        .from("medication_schedules")
+        .insert(times.map((t) => ({ medication_id: med.id, scheduled_time: t })));
+      if (schedError) return { ok: false, error: schedError.message };
+    }
+
+    revalidatePath("/dashboard/sante");
+    revalidatePath("/dashboard");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Erreur inattendue." };
+  }
+}
+
+/** Désactive un médicament (conserve l'historique des prises passées). */
+export async function deactivateMedication(medicationId: string): Promise<ActionResult> {
+  try {
+    const admin = createAdminClient();
+    const { data: med } = await admin.from("medications").select("family_id").eq("id", medicationId).maybeSingle();
+    if (!med) return { ok: false, error: "Médicament introuvable." };
+    await requireMembership(med.family_id);
+    const { error } = await admin.from("medications").update({ active: false }).eq("id", medicationId);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/dashboard/sante");
+    revalidatePath("/dashboard");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Erreur inattendue." };
+  }
+}
+
 /** Marque une prise de médicament comme donnée / non donnée. */
 export async function toggleDose(doseId: string, given: boolean): Promise<ActionResult> {
   try {

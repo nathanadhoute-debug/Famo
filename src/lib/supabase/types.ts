@@ -442,6 +442,13 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_users: {
+        Row: {
+          id:    string
+          email: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generate_daily_doses: {

@@ -78,13 +78,30 @@ Taille réduite (`0.58em/0.085em` → `0.5em/0.07em` dans `.fm-o::after`, `globa
 
 ## État actuel (déployé sur famo.health)
 
-✅ Fonctionnel : landing, auth (login/signup/confirmation email/**mot de passe oublié**), onboarding, dashboard (6 pages, design éditorial), invitations (création, email, acceptation), connexion Supabase (avec filet de sécurité en dur), **SMTP personnalisé Resend pour tous les emails auth**, **RLS actif sur families/family_members**, **favicon/icônes de lien corrects**.
+✅ Fonctionnel : landing, auth (login/signup/confirmation email/**mot de passe oublié**), onboarding, dashboard (6 pages, design éditorial), invitations (création, email, acceptation), connexion Supabase (avec filet de sécurité en dur), **SMTP personnalisé Resend pour tous les emails auth**, **RLS actif sur families/family_members**, **favicon/icônes de lien corrects**, **suivi médicaments (ajout, horaires, ordonnance) + les 3 crons (daily-doses, rx-expiry, visit-reminder) réellement implémentés**.
 
 ⚠️ Pas encore fait :
-- **Stripe** : infra présente (`lib/stripe.ts`, webhook, cron) mais non branchée à l'UI, pas de mur de paiement. **Prochain gros chantier.**
+- **Stripe** : infra présente (`lib/stripe.ts`, webhook, cron) mais non branchée à l'UI, pas de mur de paiement.
 - **Réputation email Resend** : domaine vérifié mais jeune, les emails peuvent atterrir en spam au début.
-- **Crons** (`daily-doses`, `rx-expiry`, `visit-reminder`) : présents mais pas vérifiés/testés.
 - Test RLS avec un compte membre non-admin non réalisé (seul le compte admin a été vérifié après réactivation) — à garder en tête si un membre signale un souci d'affichage.
+- **Pas de page de confidentialité/mentions légales** — l'app manipule des données de santé (médicaments, journal), catégorie sensible en RGPD. À faire avant une candidature/démo externe.
+- **Rendu mobile jamais vérifié** — l'app est probablement utilisée depuis un téléphone en priorité par les familles, à tester.
+- Les emails des 2 nouveaux crons (rx-expiry, visit-reminder) n'ont pas encore pu être testés en conditions réelles (aucune donnée ne matche encore les critères de déclenchement).
+
+### Phase 5 — Suivi médicaments + crons fonctionnels (13/07/2026)
+
+Les crons existaient depuis la Phase 1 mais étaient des coquilles vides (`// TODO`). En creusant pour les implémenter, découverte que **rien dans l'UI ne permettait de créer un médicament** — les tables `medications`/`medication_schedules`/`doses`/`prescriptions` existaient en base depuis le début mais avaient été laissées de côté pendant le redesign éditorial (remplacées par le système générique `vitals`). `DoseList.tsx` et `toggleDose()` existaient déjà et fonctionnaient, mais rien ne les alimentait.
+
+Ajouté :
+- `lib/actions/health.ts` : `addMedication()` (+ horaires de prise) et `deactivateMedication()` (désactivation plutôt que suppression, conserve l'historique des prises).
+- `components/dashboard/MedicationsManager.tsx` : formulaire médicament (nom, dose, catégorie, horaires, ordonnance + date d'expiration, critique).
+- Page Santé : affiche maintenant `DoseList` (prises du jour, déjà existant) + `MedicationsManager` + `VitalsManager`.
+- `lib/cron-mail.ts` : utilitaire partagé (emails du cercle + envoi Resend) pour les crons.
+- **daily-doses** : appelle `generate_daily_doses()` (RPC).
+- **rx-expiry** : alerte le cercle quand une ordonnance expire dans exactement 30 jours (déclenchement unique, pas de répétition quotidienne).
+- **visit-reminder** : alerte le cercle la veille d'une visite avec visiteur assigné.
+- Destinataire des alertes : tout le cercle familial (décision produit, pas juste la personne concernée).
+- `types.ts` : ajout du type pour la vue `auth_users` (existait en SQL, jamais déclarée côté TS).
 
 ## Règles à ne jamais casser
 
