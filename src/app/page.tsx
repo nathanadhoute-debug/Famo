@@ -97,7 +97,7 @@ export default function LandingPage() {
       {/* Fonctionnalités -------------------------------------------- */}
       <section id="fonctionnalites" className="lp-wrap" style={{ padding: "40px 24px 72px" }}>
         <div style={{ textAlign: "center", marginBottom: 44 }}>
-          <h2 style={{ fontSize: 34, marginBottom: 12 }}>Vieillir accompagné. Aider ensemble.</h2>
+          <h2 style={{ fontSize: 34, marginBottom: 12 }}>Tout ce qui compte, au même endroit</h2>
           <p style={{ color: c.muted, fontSize: 17, maxWidth: 540, margin: "0 auto" }}>
             Une application pensée pour le parent âgé comme pour ses enfants aidants.
           </p>
