@@ -136,13 +136,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Citation --------------------------------------------------- */}
+      {/* Positionnement ----------------------------------------------- */}
       <section className="lp-wrap" style={{ padding: "80px 24px", textAlign: "center" }}>
-        <p style={{ fontFamily: font.display, fontSize: 28, lineHeight: 1.4, color: c.sage900, maxWidth: 720, margin: "0 auto", fontStyle: "italic" }}>
-          « On était trois enfants à s'occuper de papa, chacun dans son coin.
-          Famō nous a enfin mis sur la même page. »
+        <p style={{ fontFamily: font.display, fontSize: 30, lineHeight: 1.4, color: c.sage900, maxWidth: 720, margin: "0 auto" }}>
+          Vieillir accompagné. Aider ensemble.
         </p>
-        <p style={{ color: c.muted, marginTop: 20, fontSize: 15 }}>— Une famille utilisatrice</p>
       </section>
 
       {/* CTA final -------------------------------------------------- */}
