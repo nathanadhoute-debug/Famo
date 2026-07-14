@@ -77,7 +77,7 @@ export function MedicationsManager({ initial, familyId, parentId }: {
                 <p style={{ fontSize: 12, color: c.eyebrow, margin: "3px 0 0" }}>
                   {m.category}
                   {m.medication_schedules.length > 0 && ` · ${m.medication_schedules.map((s) => s.scheduled_time.slice(0, 5)).join(", ")}`}
-                  {m.rx_expires_at && ` · Ordonnance jusqu'au ${new Date(m.rx_expires_at).toLocaleDateString("fr-FR")}`}
+                  {m.rx_expires_at && ` · Ordonnance jusqu'au ${new Date(m.rx_expires_at).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}`}
                 </p>
               </div>
               <button onClick={() => deactivate(m.id)} disabled={pending} aria-label="Désactiver"

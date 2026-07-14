@@ -185,7 +185,7 @@ export function VitalsManager({ initial, familyId, parentId }: {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 14, color: c.sage900, margin: 0, fontWeight: 500 }}>{v.label}</p>
                   <p style={{ fontSize: 12, color: c.eyebrow, margin: "2px 0 0" }}>
-                    {new Date(v.recorded_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+                    {new Date(v.recorded_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}
                   </p>
                 </div>
                 <p style={{ fontFamily: font.display, fontSize: 19, fontWeight: 400, color: c.sage900, margin: 0 }}>

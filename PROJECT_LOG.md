@@ -81,7 +81,7 @@ Taille réduite (`0.58em/0.085em` → `0.5em/0.07em` dans `.fm-o::after`, `globa
 ✅ Fonctionnel : landing, auth (login/signup/confirmation email/**mot de passe oublié**), onboarding, dashboard (6 pages, design éditorial), invitations (création, email, acceptation), connexion Supabase (avec filet de sécurité en dur), **SMTP personnalisé Resend pour tous les emails auth**, **RLS actif sur families/family_members**, **favicon/icônes de lien corrects**, **suivi médicaments (ajout, horaires, ordonnance) + les 3 crons (daily-doses, rx-expiry, visit-reminder) implémentés et vérifiés fonctionnels en prod** (bug de middleware qui les bloquait silencieusement corrigé le 14/07), **adresse contact@famo.health opérationnelle**, **page de confidentialité RGPD** (`/confidentialite`).
 
 ⚠️ Pas encore fait :
-- **Stripe** : infra présente (`lib/stripe.ts`, webhook, cron) mais non branchée à l'UI, pas de mur de paiement. Volontairement en pause en attendant une structure légale (SIRET) — prix Premium déjà remonté à 15€/mois dans le code mais pas poussé.
+- **Stripe** : infra présente (`lib/stripe.ts`, webhook, cron) mais non branchée à l'UI, pas de mur de paiement. Volontairement en pause en attendant une structure légale (SIRET) — prix Premium à 15€/mois (poussé le 14/07/2026).
 - **Réputation email Resend** : domaine vérifié mais jeune, les emails peuvent atterrir en spam au début.
 
 ## Phase 5 — Suivi médicaments + crons fonctionnels (13/07/2026)

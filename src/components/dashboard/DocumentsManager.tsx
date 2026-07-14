@@ -146,7 +146,7 @@ export function DocumentsManager({ initial, familyId, parentId }: {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 14.5, fontWeight: 500, color: c.sage900, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.label}</p>
                   <p style={{ fontSize: 12.5, color: c.sub, margin: "2px 0 0" }}>
-                    {kind(d.mime_type)}{d.file_size ? ` · ${humanSize(d.file_size)}` : ""} · ajouté {new Date(d.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
+                    {kind(d.mime_type)}{d.file_size ? ` · ${humanSize(d.file_size)}` : ""} · ajouté {new Date(d.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}
                   </p>
                 </div>
                 <span style={{ fontSize: 11.5, color: col }}>{d.category}</span>
