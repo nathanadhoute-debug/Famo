@@ -99,7 +99,7 @@ export default function LandingPage() {
         <div style={{ textAlign: "center", marginBottom: 44 }}>
           <h2 style={{ fontSize: 34, marginBottom: 12 }}>Tout ce qui compte, au même endroit</h2>
           <p style={{ color: c.muted, fontSize: 17, maxWidth: 540, margin: "0 auto" }}>
-            Une application pensée pour le parent âgé comme pour ses enfants aidants.
+            Une application pensée pour le parent âgé comme pour ses enfants aidants
           </p>
         </div>
         <div className="lp-features">
