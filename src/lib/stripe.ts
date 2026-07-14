@@ -14,7 +14,7 @@ export const PLANS = {
   },
   premium: {
     label:      "Premium",
-    price:      "9 €/mois",
+    price:      "15 €/mois",
     priceId:    process.env.STRIPE_PREMIUM_PRICE_ID!,
     maxMembers: 10,
     maxDocs:    -1,
