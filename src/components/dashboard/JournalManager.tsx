@@ -32,10 +32,12 @@ export function JournalManager({ initial, familyId, parentId, currentUserId, isA
   const router = useRouter();
   const [content, setContent] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [filter, setFilter] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
 
   const toggleTag = (t: string) => setTags((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
+  const visible = filter ? initial.filter((e) => e.tags.includes(filter)) : initial;
 
   const submit = () => {
     if (!parentId) { setError("Ajoutez d'abord un proche dans le cercle."); return; }
@@ -84,12 +86,36 @@ export function JournalManager({ initial, familyId, parentId, currentUserId, isA
 
       <Hairline margin="30px 0 24px" />
 
+      {/* Filtre du fil */}
+      {initial.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 20 }}>
+          <button type="button" onClick={() => setFilter(null)}
+            style={{ cursor: "pointer", padding: "5px 12px", fontSize: 12.5, borderRadius: 999, fontFamily: font.body,
+              background: filter === null ? c.sage900 : "transparent", color: filter === null ? "#fff" : c.sage900, border: `1px solid ${filter === null ? c.sage900 : c.hairline}` }}>
+            Toutes
+          </button>
+          {TAGS.map((t) => {
+            const active = filter === t;
+            const col = TAG_COLOR[t] ?? c.sage700;
+            return (
+              <button key={t} type="button" onClick={() => setFilter(active ? null : t)}
+                style={{ cursor: "pointer", padding: "5px 12px", fontSize: 12.5, borderRadius: 999, fontFamily: font.body,
+                  background: active ? col : "transparent", color: active ? "#fff" : col, border: `1px solid ${active ? col : c.hairline}` }}>
+                {t}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Fil */}
       {initial.length === 0 ? (
         <p style={{ fontSize: 14.5, color: c.sub, lineHeight: 1.6 }}>Le journal est vide. Partagez la première nouvelle du quotidien.</p>
+      ) : visible.length === 0 ? (
+        <p style={{ fontSize: 14.5, color: c.sub, lineHeight: 1.6 }}>Aucune note avec ce tag.</p>
       ) : (
         <div style={{ display: "grid", gap: 26 }}>
-          {initial.map((e, i) => {
+          {visible.map((e, i) => {
             const canDelete = e.author_id === currentUserId || isAdmin;
             return (
               <div key={e.id} style={{ borderLeft: `2px solid ${i === 0 ? c.sage700 : c.hairline}`, paddingLeft: 18, opacity: i === 0 ? 1 : 0.6 }}>
