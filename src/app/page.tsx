@@ -3,7 +3,7 @@ import { Logo } from "@/components/Logo";
 import { c, font } from "@/lib/theme";
 
 export const metadata = {
-  title: "Famō — Prendre soin d'un parent âgé, ensemble",
+  title: "Famō — Vieillir accompagné. Aider ensemble.",
 };
 
 const features = [
@@ -71,7 +71,7 @@ export default function LandingPage() {
         <div className="lp-hero">
           <div style={{ animation: "fadeUp .5s ease both" }}>
             <span className="badge" style={{ marginBottom: 22 }}>Coordination familiale · pour les aidants</span>
-            <h1 className="lp-h1">Prendre soin d'un parent âgé,<br /><em style={{ fontStyle: "italic", color: c.sage700 }}>ensemble</em>.</h1>
+            <h1 className="lp-h1">Vieillir accompagné.<br /><em style={{ fontStyle: "italic", color: c.sage700 }}>Aider ensemble</em>.</h1>
             <p style={{ fontSize: 18, color: c.muted, lineHeight: 1.6, maxWidth: 480, marginBottom: 32 }}>
               Famō réunit toute la famille autour de votre proche : visites, médicaments,
               journal et documents. Fini les groupes de messages éparpillés.
@@ -97,7 +97,7 @@ export default function LandingPage() {
       {/* Fonctionnalités -------------------------------------------- */}
       <section id="fonctionnalites" className="lp-wrap" style={{ padding: "40px 24px 72px" }}>
         <div style={{ textAlign: "center", marginBottom: 44 }}>
-          <h2 style={{ fontSize: 34, marginBottom: 12 }}>Tout ce qui compte, au même endroit</h2>
+          <h2 style={{ fontSize: 34, marginBottom: 12 }}>Vieillir accompagné. Aider ensemble.</h2>
           <p style={{ color: c.muted, fontSize: 17, maxWidth: 540, margin: "0 auto" }}>
             Une application pensée pour le parent âgé comme pour ses enfants aidants.
           </p>
@@ -134,13 +134,6 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
-      </section>
-
-      {/* Positionnement ----------------------------------------------- */}
-      <section className="lp-wrap" style={{ padding: "80px 24px", textAlign: "center" }}>
-        <p style={{ fontFamily: font.display, fontSize: 30, lineHeight: 1.4, color: c.sage900, maxWidth: 720, margin: "0 auto" }}>
-          Vieillir accompagné. Aider ensemble.
-        </p>
       </section>
 
       {/* CTA final -------------------------------------------------- */}
