@@ -4,16 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentFamily, getFamilyMembers } from "@/lib/family";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline, Avatar, Sparkline } from "@/components/dashboard/editorial";
-import { initials, timeAgo, parseNumeric, mondayOf } from "@/lib/format";
+import { initials, timeAgo, parseNumeric, mondayOf, parisDateKey } from "@/lib/format";
 import { deriveParentStatus } from "@/lib/status";
 import { c, font } from "@/lib/theme";
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const AV_COLORS = [c.sage700, c.sageSoft, c.terracotta];
-
-function sameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
 
 export default async function DashboardHome() {
   const ctx = await getCurrentFamily();
@@ -52,8 +48,8 @@ export default async function DashboardHome() {
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(d.getDate() + i);
-    const v = weekVisits.find((x) => sameDay(new Date(x.visit_date), d));
-    return { date: d, weekday: WEEKDAYS[i], isToday: sameDay(d, now), name: v ? nameById(v.visitor_id) : null };
+    const v = weekVisits.find((x) => parisDateKey(new Date(x.visit_date)) === parisDateKey(d));
+    return { date: d, weekday: WEEKDAYS[i], isToday: parisDateKey(d) === parisDateKey(now), name: v ? nameById(v.visitor_id) : null };
   });
   const assignedIdx = days.map((d, i) => (d.name ? i : -1)).filter((i) => i >= 0);
 
@@ -198,7 +194,7 @@ export default async function DashboardHome() {
           {nextVisit ? (
             <>
               <p style={{ fontFamily: font.display, fontSize: 22, fontWeight: 500, color: c.sage900, margin: "12px 0 4px", lineHeight: 1.25 }}>
-                {new Date(nextVisit.visit_date).toLocaleDateString("fr-FR", { weekday: "long", hour: "2-digit", minute: "2-digit" })}
+                {new Date(nextVisit.visit_date).toLocaleDateString("fr-FR", { weekday: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}
               </p>
               <p style={{ fontSize: 13, color: c.sub, margin: "0 0 14px" }}>
                 {nextVisit.note ? `${nextVisit.note} · ` : ""}{nameById(nextVisit.visitor_id) ?? "Visite"}

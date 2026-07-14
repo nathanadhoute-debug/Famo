@@ -45,3 +45,14 @@ export function mondayOf(ref: Date): Date {
   d.setDate(d.getDate() - day);
   return d;
 }
+
+/**
+ * Étiquette AAAA-MM-JJ d'une date en heure de Paris — indépendante du fuseau
+ * du serveur (Node/UTC en prod) ou du navigateur, pour comparer/afficher de
+ * façon cohérente le "jour" d'un timestamp des deux côtés (bug découvert le
+ * 14/07/2026 : Accueil en SSR/UTC affichait une heure différente de Relais
+ * en CSR/Europe-Paris pour la même visite).
+ */
+export function parisDateKey(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(date);
+}

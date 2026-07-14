@@ -78,17 +78,13 @@ Taille réduite (`0.58em/0.085em` → `0.5em/0.07em` dans `.fm-o::after`, `globa
 
 ## État actuel (déployé sur famo.health)
 
-✅ Fonctionnel : landing, auth (login/signup/confirmation email/**mot de passe oublié**), onboarding, dashboard (6 pages, design éditorial), invitations (création, email, acceptation), connexion Supabase (avec filet de sécurité en dur), **SMTP personnalisé Resend pour tous les emails auth**, **RLS actif sur families/family_members**, **favicon/icônes de lien corrects**, **suivi médicaments (ajout, horaires, ordonnance) + les 3 crons (daily-doses, rx-expiry, visit-reminder) réellement implémentés**.
+✅ Fonctionnel : landing, auth (login/signup/confirmation email/**mot de passe oublié**), onboarding, dashboard (6 pages, design éditorial), invitations (création, email, acceptation), connexion Supabase (avec filet de sécurité en dur), **SMTP personnalisé Resend pour tous les emails auth**, **RLS actif sur families/family_members**, **favicon/icônes de lien corrects**, **suivi médicaments (ajout, horaires, ordonnance) + les 3 crons (daily-doses, rx-expiry, visit-reminder) implémentés et vérifiés fonctionnels en prod** (bug de middleware qui les bloquait silencieusement corrigé le 14/07), **adresse contact@famo.health opérationnelle**, **page de confidentialité RGPD** (`/confidentialite`).
 
 ⚠️ Pas encore fait :
-- **Stripe** : infra présente (`lib/stripe.ts`, webhook, cron) mais non branchée à l'UI, pas de mur de paiement.
+- **Stripe** : infra présente (`lib/stripe.ts`, webhook, cron) mais non branchée à l'UI, pas de mur de paiement. Volontairement en pause en attendant une structure légale (SIRET) — prix Premium déjà remonté à 15€/mois dans le code mais pas poussé.
 - **Réputation email Resend** : domaine vérifié mais jeune, les emails peuvent atterrir en spam au début.
-- Test RLS avec un compte membre non-admin non réalisé (seul le compte admin a été vérifié après réactivation) — à garder en tête si un membre signale un souci d'affichage.
-- **Pas de page de confidentialité/mentions légales** — l'app manipule des données de santé (médicaments, journal), catégorie sensible en RGPD. À faire avant une candidature/démo externe.
-- **Rendu mobile jamais vérifié** — l'app est probablement utilisée depuis un téléphone en priorité par les familles, à tester.
-- Les emails des 2 nouveaux crons (rx-expiry, visit-reminder) n'ont pas encore pu être testés en conditions réelles (aucune donnée ne matche encore les critères de déclenchement).
 
-### Phase 5 — Suivi médicaments + crons fonctionnels (13/07/2026)
+## Phase 5 — Suivi médicaments + crons fonctionnels (13/07/2026)
 
 Les crons existaient depuis la Phase 1 mais étaient des coquilles vides (`// TODO`). En creusant pour les implémenter, découverte que **rien dans l'UI ne permettait de créer un médicament** — les tables `medications`/`medication_schedules`/`doses`/`prescriptions` existaient en base depuis le début mais avaient été laissées de côté pendant le redesign éditorial (remplacées par le système générique `vitals`). `DoseList.tsx` et `toggleDose()` existaient déjà et fonctionnaient, mais rien ne les alimentait.
 
@@ -102,6 +98,26 @@ Ajouté :
 - **visit-reminder** : alerte le cercle la veille d'une visite avec visiteur assigné.
 - Destinataire des alertes : tout le cercle familial (décision produit, pas juste la personne concernée).
 - `types.ts` : ajout du type pour la vue `auth_users` (existait en SQL, jamais déclarée côté TS).
+- **Bug de build découvert et corrigé** : les embeds PostgREST (`medications.parents(...)`) ne compilent pas — `types.ts` maintenu à la main sans `Relationships`, donc TypeScript ne peut pas les valider même si la FK existe réellement. Fix : requêtes séparées + assemblage JS partout (cf. « Règles à ne jamais casser »).
+
+## Phase 6 — Adresse email de contact + politique de confidentialité (13/07/2026)
+
+En préparation d'une éventuelle candidature Station F : réflexion sur la monétisation (prix Premium remonté de 9€ à 15€/mois, Stripe mis en pause en attendant une structure légale), puis mise en place de deux prérequis de crédibilité/conformité.
+
+- **contact@famo.health** créée via Namecheap Private Email (plan Launch, 1 boîte, ~13€/an). DNS ajoutés : 2 MX + 1 TXT SPF sur `@`, sans conflit avec le SPF Resend existant (celui-ci vit sur le sous-domaine `send`, pas sur la racine).
+- **Page `/confidentialite`** : politique de confidentialité RGPD complète (données collectées, finalités, base légale, sous-traitants par catégorie générique plutôt que nom de marque, transferts hors UE, durées de conservation, droits, absence de profilage/analytics). Responsable de traitement affiché sans prénom (« M. Adhoute »), lien ajouté au footer de la landing.
+
+## Phase 7 — Bug critique : les 3 crons ne s'exécutaient jamais (14/07/2026)
+
+En testant manuellement `rx-expiry` et `visit-reminder` (création de données de test via l'UI : médicament avec ordonnance à J+30, visite à J+1 avec visiteur assigné, puis appel direct de la route via `curl` avec le `Bearer CRON_SECRET`), les deux routes redirigeaient en `307` vers `/login` au lieu d'exécuter leur logique.
+
+**Cause** : le matcher de `middleware.ts` excluait `api/webhooks` mais pas `api/cron` — les 3 routes cron (`daily-doses`, `rx-expiry`, `visit-reminder`) étaient donc traitées comme des pages protégées. Sans cookie de session (ce qui est le cas de Vercel Cron *et* de `curl`), la requête était redirigée avant même d'atteindre la vérification du `Bearer CRON_SECRET` dans le handler. **Conséquence probable : les 3 crons n'ont jamais réussi à s'exécuter en production depuis leur implémentation (Phase 5, 13/07/2026)**, y compris `daily-doses` qui tourne chaque nuit — aucune génération automatique des doses quotidiennes pendant cette période.
+
+Fix : ajout de `api/cron` à l'exclusion du matcher (`src/middleware.ts`). Cas n°2 de la règle n°7 (le premier étant `/icon`/`/apple-icon` en Phase 4).
+
+**`CRON_SECRET` régénéré** à cette occasion (l'ancienne valeur était irrécupérable — champ "Sensitive" de Vercel, write-only comme les autres secrets). Nouvelle valeur en place en prod, testée fonctionnelle.
+
+**Vérification post-fix** : les 3 crons déclenchés manuellement via `curl` + nouveau `CRON_SECRET` → les 3 renvoient `200 ok`. Emails `rx-expiry` et `visit-reminder` reçus et vérifiés visuellement dans Gmail (contenu correct). `daily-doses` confirmé fonctionnel côté réponse HTTP (`generate_daily_doses()` est idempotente via `on conflict (schedule_id, dose_date) do nothing`, donc sans risque à rejouer).
 
 ## Règles à ne jamais casser
 
@@ -111,4 +127,5 @@ Ajouté :
 4. **Écritures sensibles** : toujours via Server Action + `requireMembership()` + client admin, jamais insert client direct.
 5. Pas de Node/npm installé sur la machine de dev habituelle — validation par build Vercel au push, pas de build local possible.
 6. **Config Supabase Auth (Site URL, Redirect URLs, SMTP Settings) vit dans le dashboard, pas dans le code/git** — si un comportement d'auth casse sans changement de code correspondant, vérifier ces réglages en premier avant de chercher un bug applicatif.
-7. **Nouvelle route publique ajoutée dans `app/`** (favicon, icônes, futures routes techniques) → toujours vérifier qu'elle est exclue du matcher de `middleware.ts`, sinon elle sera traitée comme une page protégée et redirigée vers `/login`.
+7. **Nouvelle route publique ou technique ajoutée dans `app/`** (favicon, icônes, routes cron, webhooks, futures routes techniques) → toujours vérifier qu'elle est exclue du matcher de `middleware.ts`, sinon elle sera traitée comme une page protégée et redirigée vers `/login` avant même d'exécuter son propre code (y compris sa propre vérification d'auth type `Bearer` — le middleware s'exécute avant). Touché deux fois : `/icon`/`/apple-icon` (Phase 4) puis les 3 routes `api/cron/*` (Phase 7, bug resté invisible plusieurs jours car silencieux — pas d'erreur, juste une 307 jamais suivie par le cron Vercel).
+8. **Jamais d'embed PostgREST** (`.select("table(colonne)")`) : `src/lib/supabase/types.ts` est maintenu à la main sans métadonnées `Relationships`, donc TypeScript rejette systématiquement ces requêtes au build (`SelectQueryError`) même quand la clé étrangère existe réellement en base. Toujours faire des requêtes séparées et assembler les données en JS (voir `getFamilyMembers` dans `lib/family.ts` ou les crons `rx-expiry`/`visit-reminder`).

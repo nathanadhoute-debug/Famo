@@ -11,20 +11,26 @@ export async function GET(req: Request) {
   if (!isAuthorized(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const admin = createAdminClient();
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowDate = tomorrow.toISOString().slice(0, 10);
+  const now = new Date();
+  // visit_date est un timestamptz (heure réelle choisie, cf. migration 005) :
+  // on ne peut plus comparer à une date exacte, on récupère une fenêtre large
+  // puis on filtre sur le jour calendaire à Paris (fuseau du serveur cron = UTC).
+  const parisKey = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(d);
+  const tomorrowKey = parisKey(new Date(now.getTime() + 24 * 3600 * 1000));
 
   const { data: visits, error } = await admin
     .from("visits")
-    .select("family_id, parent_id, visitor_id")
-    .eq("visit_date", tomorrowDate)
-    .not("visitor_id", "is", null);
+    .select("family_id, parent_id, visitor_id, visit_date")
+    .not("visitor_id", "is", null)
+    .gte("visit_date", new Date(now.getTime() - 24 * 3600 * 1000).toISOString())
+    .lte("visit_date", new Date(now.getTime() + 3 * 24 * 3600 * 1000).toISOString());
 
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
 
+  const tomorrowVisits = (visits ?? []).filter((v) => parisKey(new Date(v.visit_date)) === tomorrowKey);
+
   let remindersSent = 0;
-  for (const visit of visits ?? []) {
+  for (const visit of tomorrowVisits) {
     // Pas d'embed PostgREST visits->parents : le fichier de types Supabase
     // est maintenu à la main sans métadonnées de relations, ce qui casse le
     // typage de l'embed même si la clé étrangère existe bien en base.

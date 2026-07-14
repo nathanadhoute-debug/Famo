@@ -4,16 +4,13 @@ import { useRouter } from "next/navigation";
 import { c, font } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline, Avatar } from "@/components/dashboard/editorial";
-import { mondayOf } from "@/lib/format";
+import { mondayOf, parisDateKey } from "@/lib/format";
 import { addVisit, deleteVisit } from "@/lib/actions/visits";
 
 type Visit = { id: string; visit_date: string; note: string | null; visitor_id: string | null };
 type Member = { userId: string; name: string };
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-function sameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
 
 export function VisitsManager({ initial, members, familyId, parentId, currentUserId }: {
   initial: Visit[];
@@ -36,8 +33,8 @@ export function VisitsManager({ initial, members, familyId, parentId, currentUse
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(d.getDate() + i);
-    const v = initial.find((x) => sameDay(new Date(x.visit_date), d));
-    return { date: d, weekday: WEEKDAYS[i], isToday: sameDay(d, now), name: v ? nameFor(v.visitor_id) : null };
+    const v = initial.find((x) => parisDateKey(new Date(x.visit_date)) === parisDateKey(d));
+    return { date: d, weekday: WEEKDAYS[i], isToday: parisDateKey(d) === parisDateKey(now), name: v ? nameFor(v.visitor_id) : null };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [initial]);
   const assignedIdx = days.map((d, i) => (d.name ? i : -1)).filter((i) => i >= 0);
@@ -51,7 +48,11 @@ export function VisitsManager({ initial, members, familyId, parentId, currentUse
     if (!form.date) { setError("Choisissez une date."); return; }
     setError("");
     start(async () => {
-      const res = await addVisit({ familyId, parentId, visitDate: form.date, visitorId: form.visitorId || null, note: form.note });
+      // form.date (datetime-local) est une heure locale sans fuseau : new Date()
+      // l'interprète dans le fuseau du navigateur, .toISOString() la convertit
+      // en instant UTC correct avant l'envoi au serveur.
+      const visitDate = new Date(form.date).toISOString();
+      const res = await addVisit({ familyId, parentId, visitDate, visitorId: form.visitorId || null, note: form.note });
       if (!res.ok) return setError(res.error);
       setForm({ date: "", visitorId: currentUserId, note: "" });
       setOpen(false);
@@ -158,13 +159,13 @@ function VisitList({ title, visits, nameFor, remove, pending, empty, muted }: {
             return (
               <div key={v.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderTop: `1px solid ${c.hairline}` }}>
                 <div style={{ width: 46, flexShrink: 0, textAlign: "center" }}>
-                  <div style={{ fontSize: 11, color: c.eyebrow, textTransform: "uppercase" }}>{d.toLocaleDateString("fr-FR", { month: "short" })}</div>
-                  <div style={{ fontFamily: font.display, fontSize: 20, fontWeight: 400, color: c.sage900, lineHeight: 1.1 }}>{d.getDate()}</div>
+                  <div style={{ fontSize: 11, color: c.eyebrow, textTransform: "uppercase" }}>{d.toLocaleDateString("fr-FR", { month: "short", timeZone: "Europe/Paris" })}</div>
+                  <div style={{ fontFamily: font.display, fontSize: 20, fontWeight: 400, color: c.sage900, lineHeight: 1.1 }}>{Number(parisDateKey(d).slice(8))}</div>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 14.5, fontWeight: 500, color: c.sage900, margin: 0 }}>{nameFor(v.visitor_id)}</p>
                   <p style={{ fontSize: 12.5, color: c.sub, margin: "2px 0 0" }}>
-                    {d.toLocaleDateString("fr-FR", { weekday: "long" })} · {d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}{v.note ? ` · ${v.note}` : ""}
+                    {d.toLocaleDateString("fr-FR", { weekday: "long", timeZone: "Europe/Paris" })} · {d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}{v.note ? ` · ${v.note}` : ""}
                   </p>
                 </div>
                 <button onClick={() => remove(v.id)} disabled={pending} aria-label="Annuler" style={{ background: "transparent", border: "none", cursor: "pointer", color: c.eyebrow, display: "flex", padding: 4 }}>
