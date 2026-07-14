@@ -59,7 +59,10 @@ export function deriveParentStatus(input: {
   }
 
   const hasUrgence = !!lastEntry?.tags?.includes("urgence");
-  if (hasUrgence) alerts.push("note d'urgence dans le journal");
+  if (hasUrgence && lastEntry) {
+    const snippet = lastEntry.content.length > 90 ? `${lastEntry.content.slice(0, 90).trimEnd()}…` : lastEntry.content;
+    alerts.push(`« ${snippet} »`);
+  }
 
   const who = parentFirstName ?? "Votre proche";
 
