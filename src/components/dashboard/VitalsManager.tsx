@@ -39,6 +39,7 @@ export function VitalsManager({ initial, familyId, parentId }: {
   const [form, setForm] = useState({ label: "", value: "", unit: "" });
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [pending, start] = useTransition();
 
   // Regroupe par intitulé pour les indicateurs en vedette.
@@ -177,8 +178,16 @@ export function VitalsManager({ initial, familyId, parentId }: {
       {initial.length > 0 && (
         <>
           <Hairline margin="26px 0" />
-          <Eyebrow>Historique</Eyebrow>
-          <div style={{ marginTop: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Eyebrow>Historique</Eyebrow>
+            <button type="button" onClick={() => setShowHistory((v) => !v)}
+              style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer",
+                background: "transparent", border: "none", color: c.terracotta, fontSize: 12.5, fontWeight: 500, fontFamily: font.body }}>
+              {showHistory ? "Masquer" : `Voir l'historique (${initial.length})`}
+              <Icon name="chevron-right" size={13} style={{ transform: showHistory ? "rotate(90deg)" : "none" }} />
+            </button>
+          </div>
+          <div style={{ marginTop: 6, display: showHistory ? "block" : "none" }}>
             {initial.map((v) => (
               <div key={v.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderTop: `1px solid ${c.hairline}` }}>
                 <span style={{ color: c.sageSoft, display: "flex" }}><Icon name={iconFor(v.label)} size={18} /></span>
