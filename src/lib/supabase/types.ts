@@ -475,6 +475,7 @@ export type Database = {
           family_id:      string
           parent_id:      string
           med_name:       string
+          med_dose:       string
           scheduled_time: string
         }[]
       }

@@ -29,10 +29,10 @@ export async function GET(req: Request) {
     : { data: [] };
   const parentNames = new Map((parents ?? []).map((p) => [p.id, p.name]));
 
-  const byFamily = new Map<string, { doseId: string; medName: string; parentName: string }[]>();
+  const byFamily = new Map<string, { doseId: string; medName: string; medDose: string; parentName: string }[]>();
   for (const d of overdue ?? []) {
     const list = byFamily.get(d.family_id) ?? [];
-    list.push({ doseId: d.dose_id, medName: d.med_name, parentName: parentNames.get(d.parent_id) ?? "votre proche" });
+    list.push({ doseId: d.dose_id, medName: d.med_name, medDose: d.med_dose, parentName: parentNames.get(d.parent_id) ?? "votre proche" });
     byFamily.set(d.family_id, list);
   }
 
@@ -40,7 +40,7 @@ export async function GET(req: Request) {
   const alertedIds: string[] = [];
   for (const [familyId, items] of byFamily) {
     const emails = await getFamilyEmails(admin, familyId);
-    const rows = items.map((i) => `<li><strong>${i.medName}</strong> — ${i.parentName}</li>`).join("");
+    const rows = items.map((i) => `<li><strong>${i.medName}</strong> (${i.medDose}) — ${i.parentName}</li>`).join("");
     await sendCronEmail({
       to: emails,
       subject: "Médicament non pris",
