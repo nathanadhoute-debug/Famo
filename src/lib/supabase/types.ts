@@ -217,16 +217,17 @@ export type Database = {
       }
       doses: {
         Row: {
-          id:            string
-          schedule_id:   string
-          medication_id: string
-          family_id:     string
-          dose_date:     string
-          given:         boolean
-          given_by:      string | null
-          given_at:      string | null
-          note:          string | null
-          created_at:    string
+          id:             string
+          schedule_id:    string
+          medication_id:  string
+          family_id:      string
+          dose_date:      string
+          given:          boolean
+          given_by:       string | null
+          given_at:       string | null
+          note:           string | null
+          created_at:     string
+          alert_sent_at:  string | null
         }
         Insert: {
           id?:            string
@@ -239,12 +240,14 @@ export type Database = {
           given_at?:      string | null
           note?:          string | null
           created_at?:    string
+          alert_sent_at?: string | null
         }
         Update: {
-          given?:    boolean
-          given_by?: string | null
-          given_at?: string | null
-          note?:     string | null
+          given?:         boolean
+          given_by?:      string | null
+          given_at?:      string | null
+          note?:          string | null
+          alert_sent_at?: string | null
         }
         Relationships: []
       }
@@ -463,6 +466,16 @@ export type Database = {
           parent_name:     string
           rx_label:        string
           expires_at:      string
+        }[]
+      }
+      overdue_doses: {
+        Args:    { grace_minutes?: number }
+        Returns: {
+          dose_id:        string
+          family_id:      string
+          parent_id:      string
+          med_name:       string
+          scheduled_time: string
         }[]
       }
       is_family_member: {
