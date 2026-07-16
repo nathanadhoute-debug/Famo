@@ -31,6 +31,7 @@ export default function LandingPage() {
         .lp-nav-links { display: flex; gap: 28px; align-items: center; }
         .lp-nav-links a { color: ${c.muted}; font-size: 14.5px; font-weight: 500; transition: color .15s; }
         .lp-nav-links a:hover { color: ${c.sage900}; }
+        .lp-nav-links a.btn-primary, .lp-nav-links a.btn-primary:hover { color: #fff; }
         .lp-hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center;
           padding: 72px 0 88px; }
         .lp-h1 { font-family: ${font.display}; font-size: 54px; line-height: 1.05; font-weight: 600;
