@@ -71,7 +71,7 @@ export default function LandingPage() {
       <section className="lp-wrap">
         <div className="lp-hero">
           <div style={{ animation: "fadeUp .5s ease both" }}>
-            <span className="badge" style={{ marginBottom: 22 }}>Coordination familiale · pour les aidants</span>
+            <span className="badge" style={{ marginBottom: 22 }}>Coordination familiale pour les aidants</span>
             <h1 className="lp-h1">Vieillir accompagné.<br /><em style={{ fontStyle: "italic", color: c.sage700 }}>Aider ensemble</em>.</h1>
             <p style={{ fontSize: 18, color: c.muted, lineHeight: 1.6, maxWidth: 480, marginBottom: 32 }}>
               Famō réunit toute la famille autour de votre proche : visites, médicaments,
