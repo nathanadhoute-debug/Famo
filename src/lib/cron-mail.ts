@@ -2,10 +2,17 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
-/** Emails de tous les membres d'un cercle familial (pour les alertes cron). */
-export async function getFamilyEmails(admin: AdminClient, familyId: string): Promise<string[]> {
-  const { data: members } = await admin
-    .from("family_members").select("user_id").eq("family_id", familyId);
+type NotifyPref = "notify_rx_expiry" | "notify_visit_reminder" | "notify_overdue_doses";
+
+/**
+ * Emails des membres d'un cercle familial (pour les alertes cron).
+ * `pref` filtre sur la préférence de notification correspondante (opt-out
+ * par membre, réglable dans Réglages) ; omis, tout le monde est inclus.
+ */
+export async function getFamilyEmails(admin: AdminClient, familyId: string, pref?: NotifyPref): Promise<string[]> {
+  let query = admin.from("family_members").select("user_id").eq("family_id", familyId);
+  if (pref) query = query.eq(pref, true);
+  const { data: members } = await query;
   if (!members || members.length === 0) return [];
 
   const { data: users } = await admin

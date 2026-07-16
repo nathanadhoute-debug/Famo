@@ -56,6 +56,28 @@ export async function removeMember(familyId: string, userId: string): Promise<Ac
   }
 }
 
+/** Met à jour les préférences de notification email de l'utilisateur connecté. */
+export async function updateNotificationPrefs(familyId: string, prefs: {
+  notifyRxExpiry: boolean;
+  notifyVisitReminder: boolean;
+  notifyOverdueDoses: boolean;
+}): Promise<ActionResult> {
+  try {
+    const { userId } = await requireMembership(familyId);
+    const admin = createAdminClient();
+    const { error } = await admin.from("family_members").update({
+      notify_rx_expiry: prefs.notifyRxExpiry,
+      notify_visit_reminder: prefs.notifyVisitReminder,
+      notify_overdue_doses: prefs.notifyOverdueDoses,
+    }).eq("family_id", familyId).eq("user_id", userId);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/dashboard/reglages");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Erreur inattendue." };
+  }
+}
+
 /** Annule une invitation en attente (admin). */
 export async function cancelInvite(inviteId: string): Promise<ActionResult> {
   try {

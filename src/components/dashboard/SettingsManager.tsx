@@ -5,16 +5,17 @@ import { createClient } from "@/lib/supabase/client";
 import { c } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline, Avatar } from "@/components/dashboard/editorial";
-import { updateProfile, renameFamily, removeMember, cancelInvite } from "@/lib/actions/circle";
+import { updateProfile, renameFamily, removeMember, cancelInvite, updateNotificationPrefs } from "@/lib/actions/circle";
 import { createInvite } from "@/lib/actions/invites";
 
 type Member = { userId: string; name: string; role: string };
 type Invite = { id: string; email: string; role: string };
+type NotificationPrefs = { rxExpiry: boolean; visitReminder: boolean; overdueDoses: boolean };
 
 const ROLE_LABEL: Record<string, string> = { admin: "Admin", member: "Membre", readonly: "Lecture seule" };
 
 export function SettingsManager({
-  profileName, family, isAdmin, members, pendingInvites, currentUserId, userEmail,
+  profileName, family, isAdmin, members, pendingInvites, currentUserId, userEmail, notificationPrefs,
 }: {
   profileName: string;
   family: { id: string; name: string };
@@ -23,6 +24,7 @@ export function SettingsManager({
   pendingInvites: Invite[];
   currentUserId: string;
   userEmail: string;
+  notificationPrefs: NotificationPrefs;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -34,6 +36,8 @@ export function SettingsManager({
       <CircleSection family={family} isAdmin={isAdmin} />
       <Hairline margin="28px 0" />
       <MembersSection family={family} isAdmin={isAdmin} members={members} pendingInvites={pendingInvites} currentUserId={currentUserId} />
+      <Hairline margin="28px 0" />
+      <NotificationsSection familyId={family.id} initial={notificationPrefs} />
       <Hairline margin="28px 0" />
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
@@ -98,6 +102,58 @@ function CircleSection({ family, isAdmin }: { family: { id: string; name: string
             {pending ? "Enregistrement…" : "Renommer"}
           </button>
         )}
+      </Saveable>
+    </section>
+  );
+}
+
+const NOTIF_OPTIONS: { key: keyof NotificationPrefs; label: string; help: string }[] = [
+  { key: "rxExpiry", label: "Ordonnance à renouveler", help: "Quand une ordonnance expire dans 30 jours." },
+  { key: "visitReminder", label: "Rappel de visite", help: "La veille d'une visite programmée." },
+  { key: "overdueDoses", label: "Médicament non pris", help: "1h après l'heure prévue si pas coché comme pris." },
+];
+
+function NotificationsSection({ familyId, initial }: { familyId: string; initial: NotificationPrefs }) {
+  const router = useRouter();
+  const [prefs, setPrefs] = useState(initial);
+  const [msg, setMsg] = useState(""); const [err, setErr] = useState("");
+  const [pending, start] = useTransition();
+
+  const toggle = (key: keyof NotificationPrefs) => setPrefs((p) => ({ ...p, [key]: !p[key] }));
+
+  const save = () => {
+    setMsg(""); setErr("");
+    start(async () => {
+      const r = await updateNotificationPrefs(familyId, {
+        notifyRxExpiry: prefs.rxExpiry,
+        notifyVisitReminder: prefs.visitReminder,
+        notifyOverdueDoses: prefs.overdueDoses,
+      });
+      if (!r.ok) return setErr(r.error);
+      setMsg("Préférences enregistrées.");
+      router.refresh();
+    });
+  };
+
+  return (
+    <section>
+      <Eyebrow>Notifications</Eyebrow>
+      <p style={{ fontSize: 13.5, color: c.sub, margin: "6px 0 14px" }}>Emails que vous recevez pour ce cercle (les autres membres ne sont pas concernés).</p>
+      <Saveable>
+        {NOTIF_OPTIONS.map((opt) => (
+          <label key={opt.key} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 0", cursor: "pointer" }}>
+            <input type="checkbox" checked={prefs[opt.key]} onChange={() => toggle(opt.key)} style={{ marginTop: 3 }} />
+            <span>
+              <span style={{ display: "block", fontSize: 14, color: c.sage900, fontWeight: 500 }}>{opt.label}</span>
+              <span style={{ display: "block", fontSize: 12.5, color: c.sub, marginTop: 2 }}>{opt.help}</span>
+            </span>
+          </label>
+        ))}
+        {err && <p style={{ color: c.danger, fontSize: 13.5, marginTop: 10 }}>{err}</p>}
+        {msg && <p style={{ color: c.success, fontSize: 13.5, marginTop: 10 }}>{msg}</p>}
+        <button className="btn btn-primary" style={{ marginTop: 14, borderRadius: 9 }} onClick={save} disabled={pending}>
+          {pending ? "Enregistrement…" : "Enregistrer"}
+        </button>
       </Saveable>
     </section>
   );

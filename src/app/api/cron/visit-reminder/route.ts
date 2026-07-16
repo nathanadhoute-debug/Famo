@@ -41,7 +41,7 @@ export async function GET(req: Request) {
       .from("profiles").select("full_name").eq("id", visit.visitor_id!).maybeSingle();
     const visitorName = visitor?.full_name || "Quelqu'un du cercle";
 
-    const emails = await getFamilyEmails(admin, visit.family_id);
+    const emails = await getFamilyEmails(admin, visit.family_id, "notify_visit_reminder");
     await sendCronEmail({
       to: emails,
       subject: `Rappel : visite prévue demain auprès de ${parentName}`,

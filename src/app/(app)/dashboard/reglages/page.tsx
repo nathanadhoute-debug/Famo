@@ -11,7 +11,7 @@ export default async function ReglagesPage() {
   if (!ctx) redirect("/onboarding");
   const supabase = await createClient();
 
-  const [{ data: profile }, members, { data: invites }] = await Promise.all([
+  const [{ data: profile }, members, { data: invites }, { data: myPrefs }] = await Promise.all([
     supabase.from("profiles").select("full_name").eq("id", ctx.user.id).maybeSingle(),
     getFamilyMembers(ctx.family.id),
     supabase.from("invitations")
@@ -19,6 +19,9 @@ export default async function ReglagesPage() {
       .eq("family_id", ctx.family.id)
       .is("accepted_at", null)
       .order("created_at", { ascending: false }),
+    supabase.from("family_members")
+      .select("notify_rx_expiry, notify_visit_reminder, notify_overdue_doses")
+      .eq("family_id", ctx.family.id).eq("user_id", ctx.user.id).maybeSingle(),
   ]);
 
   return (
@@ -32,6 +35,11 @@ export default async function ReglagesPage() {
         pendingInvites={invites ?? []}
         currentUserId={ctx.user.id}
         userEmail={ctx.user.email ?? ""}
+        notificationPrefs={{
+          rxExpiry: myPrefs?.notify_rx_expiry ?? true,
+          visitReminder: myPrefs?.notify_visit_reminder ?? true,
+          overdueDoses: myPrefs?.notify_overdue_doses ?? true,
+        }}
       />
     </div>
   );

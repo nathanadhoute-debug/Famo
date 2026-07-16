@@ -47,7 +47,7 @@ export async function GET(req: Request) {
 
   let emailsSent = 0;
   for (const [familyId, items] of byFamily) {
-    const emails = await getFamilyEmails(admin, familyId);
+    const emails = await getFamilyEmails(admin, familyId, "notify_rx_expiry");
     const rows = items.map((i) => `<li><strong>${i.medName}</strong>${i.rxLabel ? ` (${i.rxLabel})` : ""} — ${i.parentName}</li>`).join("");
     await sendCronEmail({
       to: emails,

@@ -39,7 +39,7 @@ export async function GET(req: Request) {
   let emailsSent = 0;
   const alertedIds: string[] = [];
   for (const [familyId, items] of byFamily) {
-    const emails = await getFamilyEmails(admin, familyId);
+    const emails = await getFamilyEmails(admin, familyId, "notify_overdue_doses");
     const rows = items.map((i) => `<li><strong>${i.medName}</strong> (${i.medDose}) — ${i.parentName}</li>`).join("");
     await sendCronEmail({
       to: emails,

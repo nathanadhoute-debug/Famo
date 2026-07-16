@@ -43,21 +43,30 @@ export type Database = {
       }
       family_members: {
         Row: {
-          id:        string
-          family_id: string
-          user_id:   string
-          role:      'admin' | 'member' | 'readonly'
-          joined_at: string
+          id:                     string
+          family_id:              string
+          user_id:                string
+          role:                   'admin' | 'member' | 'readonly'
+          joined_at:              string
+          notify_rx_expiry:       boolean
+          notify_visit_reminder:  boolean
+          notify_overdue_doses:   boolean
         }
         Insert: {
-          id?:        string
-          family_id:  string
-          user_id:    string
-          role?:      'admin' | 'member' | 'readonly'
-          joined_at?: string
+          id?:                     string
+          family_id:               string
+          user_id:                 string
+          role?:                   'admin' | 'member' | 'readonly'
+          joined_at?:              string
+          notify_rx_expiry?:       boolean
+          notify_visit_reminder?:  boolean
+          notify_overdue_doses?:   boolean
         }
         Update: {
-          role?: 'admin' | 'member' | 'readonly'
+          role?:                   'admin' | 'member' | 'readonly'
+          notify_rx_expiry?:       boolean
+          notify_visit_reminder?:  boolean
+          notify_overdue_doses?:   boolean
         }
         Relationships: []
       }
