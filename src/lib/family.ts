@@ -1,17 +1,24 @@
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 export type MemberRole = "admin" | "member" | "readonly";
+export type ParentLite = { id: string; name: string; birth_date: string | null };
 
 export type CurrentFamily = {
-  user:   { id: string; email: string | null };
-  family: { id: string; name: string };
-  role:   MemberRole;
-  parent: { id: string; name: string; birth_date: string | null } | null;
+  user:    { id: string; email: string | null };
+  family:  { id: string; name: string };
+  role:    MemberRole;
+  parent:  ParentLite | null;
+  parents: ParentLite[];
 };
+
+const ACTIVE_PARENT_COOKIE = "active_parent_id";
 
 /**
  * Récupère le contexte familial de l'utilisateur connecté :
- * user → membership → family → parent principal.
+ * user → membership → family → proche actif (sélectionné via le cookie
+ * `active_parent_id`, sinon le premier créé — comportement inchangé pour
+ * un cercle avec un seul proche).
  * Retourne `null` si non connecté ou sans famille (→ à rediriger vers /onboarding).
  * Lecture via le client serveur authentifié (RLS respectée).
  */
@@ -39,19 +46,23 @@ export async function getCurrentFamily(): Promise<CurrentFamily | null> {
 
   if (!family) return null;
 
-  const { data: parent } = await supabase
+  const { data: parentsRaw } = await supabase
     .from("parents")
     .select("id, name, birth_date")
     .eq("family_id", family.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .order("created_at", { ascending: true });
+
+  const parents = parentsRaw ?? [];
+  const cookieStore = await cookies();
+  const activeId = cookieStore.get(ACTIVE_PARENT_COOKIE)?.value;
+  const parent = parents.find((p) => p.id === activeId) ?? parents[0] ?? null;
 
   return {
     user:   { id: user.id, email: user.email ?? null },
     family: { id: family.id, name: family.name },
     role:   membership.role as MemberRole,
-    parent: parent ?? null,
+    parent,
+    parents,
   };
 }
 

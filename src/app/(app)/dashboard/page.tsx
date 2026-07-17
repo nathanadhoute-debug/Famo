@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentFamily, getFamilyMembers } from "@/lib/family";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline, Avatar, Sparkline } from "@/components/dashboard/editorial";
+import { ParentSwitcher } from "@/components/dashboard/ParentSwitcher";
 import { initials, timeAgo, parseNumeric, mondayOf, parisDateKey } from "@/lib/format";
 import { deriveParentStatus } from "@/lib/status";
 import { c, font } from "@/lib/theme";
@@ -106,6 +107,12 @@ export default async function DashboardHome() {
               ))}
             </div>
           </div>
+
+          {ctx.parents.length > 1 && (
+            <div style={{ marginBottom: 18 }}>
+              <ParentSwitcher parents={ctx.parents} activeId={ctx.parent?.id ?? ""} />
+            </div>
+          )}
 
           <h1 style={{ fontFamily: font.display, fontSize: "clamp(26px,4vw,32px)", fontWeight: 500, lineHeight: 1.3, color: "#F4F2EC", margin: 0, maxWidth: 500, letterSpacing: "-0.2px" }}>
             {status.line}
