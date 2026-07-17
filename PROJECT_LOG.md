@@ -82,6 +82,10 @@ Taille réduite (`0.58em/0.085em` → `0.5em/0.07em` dans `.fm-o::after`, `globa
 
 ✅ **cron-job.org configuré** (16/07/2026) : cron job "Famō - overdue doses" créé, appelle `https://famo.health/api/cron/overdue-doses` toutes les heures avec le header `Authorization: Bearer <CRON_SECRET>`. Testé via "Test de fonctionnement" (200 OK) avant création. Les 4 crons de l'app (3 Vercel + celui-ci) tournent maintenant tous automatiquement.
 
+✅ **Préférences de notification par membre** (16/07/2026) : chaque membre du cercle choisit dans Réglages quelles alertes email il reçoit (ordonnance, visite, dose non prise), sans affecter les autres. Testé en réel : préférence décochée → email non reçu par ce membre, reçu par l'autre.
+
+✅ **Support multi-proches** (17/07/2026) : un cercle peut désormais suivre plusieurs proches (ex: mère et père), avec sélecteur sur l'Accueil, ajout/suppression dans Réglages, et toutes les données (Santé/Relais/Journal/Documents) correctement séparées par proche. Les 4 crons/emails géraient déjà nativement plusieurs proches sans modification (voir Phase 11).
+
 ⚠️ Pas encore fait :
 - **Stripe** : infra présente (`lib/stripe.ts`, webhook, cron) mais non branchée à l'UI, pas de mur de paiement. Volontairement en pause en attendant une structure légale (SIRET) — prix Premium à 15€/mois (poussé le 14/07/2026).
 - **Réputation email Resend** : domaine vérifié mais jeune, les emails peuvent atterrir en spam au début.
@@ -143,8 +147,28 @@ Suite directe de la Phase 7 : en vérifiant l'affichage d'une visite de test apr
   - Testé fonctionnel en prod : médicament de test avec horaire dans le passé + `daily-doses` rejoué manuellement pour générer la dose du jour + `overdue-doses` déclenché → email reçu et vérifié (nom + dosage + proche corrects).
   - **Recalage automatique par jour** : `dose_date` est unique par (schedule_id, jour), donc chaque nuit `daily-doses` génère des lignes fraîches (pas prises, pas alertées) — aucun risque de doublon ou de report d'une alerte de la veille.
 
-⚠️ **À faire à la prochaine session** :
-- **Configurer cron-job.org** (pas encore fait) : créer un compte gratuit, ajouter un cron job GET vers `https://famo.health/api/cron/overdue-doses` toutes les heures, header `Authorization: Bearer 686923f9ffefe85cf6a02781b0e395b957200ba41e4201ee96d26c77083f68dc`. Tant que ce n'est pas fait, l'alerte "dose non prise" ne se déclenche jamais automatiquement (testée manuellement via `curl` seulement).
+✅ **cron-job.org configuré le lendemain (16/07/2026)** — voir Phase 10.
+
+## Phase 10 — Préférences de notification + petits fixes landing (16/07/2026)
+
+- **cron-job.org configuré** : compte gratuit créé, cron job "Famō - overdue doses" → `https://famo.health/api/cron/overdue-doses` toutes les heures, header `Authorization: Bearer <CRON_SECRET>`. Validé avec le bouton "Test de fonctionnement" de cron-job.org (200 OK) avant de créer le job. Les 4 crons de l'app tournent maintenant tous automatiquement, sans intervention manuelle.
+- **Préférences de notification par membre** (`family_members.notify_rx_expiry/notify_visit_reminder/notify_overdue_doses`, migration `008_notification_preferences.sql`) : chaque membre peut désactiver individuellement une des 3 alertes email depuis Réglages, sans affecter les autres membres. Opt-out — tout reste activé par défaut. Le filtrage se fait dans `getFamilyEmails()` (`lib/cron-mail.ts`), appelé par les 3 crons concernés (pas `daily-doses`, qui n'envoie pas d'email).
+  - **Testé en conditions réelles** : préférence "Médicament non pris" décochée pour un membre → dose de test en retard déclenchée → ce membre n'a rien reçu, l'email est bien parti pour l'autre membre du cercle.
+- **Fix landing** : le bouton "Commencer" du header s'affichait en gris au lieu de blanc (`.lp-nav-links a` avait une spécificité CSS plus forte que `.btn-primary` — override ajouté). Point médian retiré du badge "Coordination familiale · pour les aidants" (devenu "Coordination familiale pour les aidants", jugé plus naturel à l'oral).
+
+## Phase 11 — Support multi-proches (17/07/2026)
+
+Jusque-là l'app ne supportait qu'un seul proche par cercle — `getCurrentFamily()` prenait toujours le premier créé. Or la base de données était déjà prête pour plusieurs proches depuis le début : 7 tables (`visits`, `medications`, `vitals`, `prescriptions`, `journal_entries`, `documents`, `medical_contacts`) ont toutes une colonne `parent_id` obligatoire. La limitation était uniquement côté application, pas côté schéma.
+
+Construit en 3 étapes, chacune poussée et vérifiée séparément avant de continuer :
+
+1. **Fondations** (`2e3d166`) : `getCurrentFamily()` récupère désormais tous les proches du cercle (`ctx.parents`) et choisit le proche actif via un cookie `active_parent_id` (repli sur le premier créé si absent — comportement strictement identique à avant pour un cercle avec un seul proche). Nouveau composant `ParentSwitcher.tsx` sur l'Accueil, masqué tant qu'il n'y a qu'un seul proche (donc invisible tant que personne n'en ajoute un deuxième — zéro risque de régression visible).
+2. **Ajout/suppression** (`23801f8`) : nouvelle section "Proches suivis" dans Réglages. `addAnotherParent()` (tout membre, toujours une insertion — différent de `addParent()` de l'onboarding qui met à jour le proche existant s'il y en a déjà un). `removeParent()` (admin uniquement, avec confirmation JS explicite car la suppression cascade tout l'historique du proche — médicaments, visites, mesures, journal, ordonnances).
+3. **Séparation des données** (`e5a4400`) : **bug trouvé en testant** — le sélecteur changeait bien le titre/l'identité affichée, mais les 5 pages du dashboard (Accueil, Santé, Relais, Journal, Documents) ne filtraient les lectures que par `family_id`, pas par `parent_id` — donc les données d'un proche "fuyaient" vers l'autre. Ajout de `.eq("parent_id", ctx.parent?.id ?? "")` sur chaque requête concernée. Les écritures (Server Actions) utilisaient déjà correctement `ctx.parent.id` passé en props, aucun changement nécessaire là.
+
+**Bonne surprise vérifiée en relisant le code des 4 crons** : aucun n'avait jamais besoin d'être modifié pour supporter plusieurs proches. Ils n'ont jamais fait l'hypothèse d'un seul proche — ils parcourent toutes les ordonnances/visites/doses de la famille et résolvent le nom du bon proche ligne par ligne à chaque email. Testé en conditions réelles avec un deuxième proche ("Monique") : médicament de test en retard → email reçu avec le bon nom.
+
+**Nuance découverte et documentée** : `rx-expiry` et `overdue-doses` groupent leurs alertes par famille (un seul email listant tous les proches concernés ce jour-là) ; `visit-reminder` envoie un email par visite (donc plusieurs emails séparés si plusieurs proches ont une visite le même jour). Incohérence mineure entre les 3 crons, pas un bug, pas corrigée pour l'instant.
 
 ## Règles à ne jamais casser
 
