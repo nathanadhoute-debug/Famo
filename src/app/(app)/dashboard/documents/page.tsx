@@ -15,6 +15,7 @@ export default async function DocumentsPage() {
     .from("documents")
     .select("id, label, category, file_size, mime_type, created_at, uploaded_by")
     .eq("family_id", ctx.family.id)
+    .eq("parent_id", ctx.parent?.id ?? "")
     .order("created_at", { ascending: false });
 
   return (

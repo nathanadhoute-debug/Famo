@@ -15,6 +15,7 @@ export default async function RelaisPage() {
     supabase.from("visits")
       .select("id, visit_date, note, visitor_id")
       .eq("family_id", ctx.family.id)
+      .eq("parent_id", ctx.parent?.id ?? "")
       .order("visit_date", { ascending: false }),
     getFamilyMembers(ctx.family.id),
   ]);

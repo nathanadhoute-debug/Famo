@@ -13,22 +13,27 @@ export default async function SantePage() {
   if (!ctx) redirect("/onboarding");
   const supabase = await createClient();
 
+  const parentId = ctx.parent?.id ?? "";
+
   const [{ data: vitals }, { data: meds }, { data: doses }] = await Promise.all([
     supabase
       .from("vitals")
       .select("id, label, value, unit, icon, recorded_at")
       .eq("family_id", ctx.family.id)
+      .eq("parent_id", parentId)
       .order("recorded_at", { ascending: false }),
     supabase
       .from("medications")
       .select("id, name, dose, category, critical, rx_label, rx_expires_at")
       .eq("family_id", ctx.family.id)
+      .eq("parent_id", parentId)
       .eq("active", true)
       .order("created_at", { ascending: true }),
     supabase
       .from("today_doses")
       .select("id, med_name, med_dose, scheduled_time, given, is_overdue, critical, given_by_name")
       .eq("family_id", ctx.family.id)
+      .eq("parent_id", parentId)
       .order("scheduled_time", { ascending: true }),
   ]);
 

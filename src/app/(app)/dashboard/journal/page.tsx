@@ -15,6 +15,7 @@ export default async function JournalPage() {
     supabase.from("journal_entries")
       .select("id, content, tags, created_at, author_id")
       .eq("family_id", ctx.family.id)
+      .eq("parent_id", ctx.parent?.id ?? "")
       .order("created_at", { ascending: false }),
     getFamilyMembers(ctx.family.id),
   ]);

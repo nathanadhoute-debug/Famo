@@ -22,20 +22,22 @@ export default async function DashboardHome() {
   const weekEnd = new Date(monday);
   weekEnd.setDate(weekEnd.getDate() + 7);
 
+  const parentId = ctx.parent?.id ?? "";
+
   const [members, { data: dosesRaw }, { data: weekVisitsRaw }, { data: nextVisitRaw }, { data: vitalsRaw }, { data: journalRaw }] =
     await Promise.all([
       getFamilyMembers(ctx.family.id),
-      supabase.from("today_doses").select("given, is_overdue").eq("family_id", ctx.family.id),
+      supabase.from("today_doses").select("given, is_overdue").eq("family_id", ctx.family.id).eq("parent_id", parentId),
       supabase.from("visits").select("id, visit_date, visitor_id, note")
-        .eq("family_id", ctx.family.id).gte("visit_date", monday.toISOString()).lt("visit_date", weekEnd.toISOString())
+        .eq("family_id", ctx.family.id).eq("parent_id", parentId).gte("visit_date", monday.toISOString()).lt("visit_date", weekEnd.toISOString())
         .order("visit_date", { ascending: true }),
       supabase.from("visits").select("id, visit_date, visitor_id, note")
-        .eq("family_id", ctx.family.id).gte("visit_date", now.toISOString())
+        .eq("family_id", ctx.family.id).eq("parent_id", parentId).gte("visit_date", now.toISOString())
         .order("visit_date", { ascending: true }).limit(1),
       supabase.from("vitals").select("label, value, unit, recorded_at")
-        .eq("family_id", ctx.family.id).order("recorded_at", { ascending: false }).limit(40),
+        .eq("family_id", ctx.family.id).eq("parent_id", parentId).order("recorded_at", { ascending: false }).limit(40),
       supabase.from("journal_entries").select("content, tags, author_id, created_at")
-        .eq("family_id", ctx.family.id).order("created_at", { ascending: false }).limit(1),
+        .eq("family_id", ctx.family.id).eq("parent_id", parentId).order("created_at", { ascending: false }).limit(1),
     ]);
 
   const nameById = (id: string | null) =>
