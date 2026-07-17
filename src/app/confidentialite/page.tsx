@@ -155,8 +155,9 @@ export default function ConfidentialitePage() {
         </P>
         <H3>4.5 Données techniques et de connexion</H3>
         <P>
-          Adresse IP, horodatage des connexions, identifiant de session. Un cookie technique strictement nécessaire
-          à l&apos;authentification est déposé lors de la connexion ; aucun autre cookie n&apos;est utilisé (voir section 12).
+          Adresse IP, horodatage des connexions, identifiant de session. Deux cookies techniques sont déposés : un
+          cookie d&apos;authentification (maintien de la session) et un cookie fonctionnel mémorisant, pour un cercle
+          suivant plusieurs proches, lequel est actuellement consulté ; aucun autre cookie n&apos;est utilisé (voir section 12).
         </P>
         <H3>4.6 Minimisation des données</H3>
         <P>
@@ -295,9 +296,16 @@ export default function ConfidentialitePage() {
 
         <H2>12. Cookies et traceurs</H2>
         <P>
-          Le Service dépose uniquement un cookie technique strictement nécessaire au maintien de la session
-          d&apos;authentification, indispensable au fonctionnement du Service et exempté, à ce titre, de recueil du
-          consentement au titre de l&apos;article 82 de la Loi Informatique et Libertés.
+          Le Service dépose deux cookies techniques :
+        </P>
+        <Ul items={[
+          <>Un cookie de session, indispensable à l&apos;authentification.</>,
+          <>Un cookie fonctionnel mémorisant, pour un cercle suivant plusieurs proches, lequel est actuellement consulté — pour éviter d&apos;avoir à le resélectionner à chaque page.</>,
+        ]} />
+        <P>
+          Ces deux cookies sont strictement nécessaires à la fourniture du service demandé par l&apos;utilisateur et
+          sont, à ce titre, exemptés de recueil du consentement au titre de l&apos;article 82 de la Loi Informatique
+          et Libertés.
         </P>
         <P>
           <strong>Aucun cookie de mesure d&apos;audience, publicitaire, de traçage tiers ou de profilage n&apos;est déposé.</strong>
