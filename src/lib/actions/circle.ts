@@ -78,6 +78,52 @@ export async function updateNotificationPrefs(familyId: string, prefs: {
   }
 }
 
+/**
+ * Ajoute un nouveau proche au cercle (Réglages). Contrairement à
+ * `addParent` (onboarding), toujours une insertion — plusieurs proches
+ * peuvent coexister dans le même cercle.
+ */
+export async function addAnotherParent(familyId: string, name: string, birthDate?: string): Promise<ActionResult> {
+  const trimmed = name.trim();
+  if (!trimmed) return { ok: false, error: "Indiquez le nom du proche." };
+  try {
+    await requireMembership(familyId);
+    const admin = createAdminClient();
+    const { error } = await admin.from("parents").insert({
+      family_id: familyId,
+      name: trimmed,
+      birth_date: birthDate || null,
+    });
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/dashboard/reglages");
+    revalidatePath("/dashboard");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Erreur inattendue." };
+  }
+}
+
+/**
+ * Retire un proche du cercle (admin uniquement). Supprime en cascade tout
+ * son historique (médicaments, visites, mesures, journal, ordonnances) —
+ * irréversible, à confirmer côté UI avant appel.
+ */
+export async function removeParent(parentId: string): Promise<ActionResult> {
+  try {
+    const admin = createAdminClient();
+    const { data: parent } = await admin.from("parents").select("family_id").eq("id", parentId).maybeSingle();
+    if (!parent) return { ok: false, error: "Proche introuvable." };
+    await requireMembership(parent.family_id, { admin: true });
+    const { error } = await admin.from("parents").delete().eq("id", parentId);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/dashboard/reglages");
+    revalidatePath("/dashboard");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Erreur inattendue." };
+  }
+}
+
 /** Annule une invitation en attente (admin). */
 export async function cancelInvite(inviteId: string): Promise<ActionResult> {
   try {

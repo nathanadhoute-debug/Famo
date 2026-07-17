@@ -40,6 +40,7 @@ export default async function ReglagesPage() {
           visitReminder: myPrefs?.notify_visit_reminder ?? true,
           overdueDoses: myPrefs?.notify_overdue_doses ?? true,
         }}
+        parents={ctx.parents.map((p) => ({ id: p.id, name: p.name }))}
       />
     </div>
   );

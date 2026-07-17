@@ -5,17 +5,18 @@ import { createClient } from "@/lib/supabase/client";
 import { c } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline, Avatar } from "@/components/dashboard/editorial";
-import { updateProfile, renameFamily, removeMember, cancelInvite, updateNotificationPrefs } from "@/lib/actions/circle";
+import { updateProfile, renameFamily, removeMember, cancelInvite, updateNotificationPrefs, addAnotherParent, removeParent } from "@/lib/actions/circle";
 import { createInvite } from "@/lib/actions/invites";
 
 type Member = { userId: string; name: string; role: string };
 type Invite = { id: string; email: string; role: string };
 type NotificationPrefs = { rxExpiry: boolean; visitReminder: boolean; overdueDoses: boolean };
+type Parent = { id: string; name: string };
 
 const ROLE_LABEL: Record<string, string> = { admin: "Admin", member: "Membre", readonly: "Lecture seule" };
 
 export function SettingsManager({
-  profileName, family, isAdmin, members, pendingInvites, currentUserId, userEmail, notificationPrefs,
+  profileName, family, isAdmin, members, pendingInvites, currentUserId, userEmail, notificationPrefs, parents,
 }: {
   profileName: string;
   family: { id: string; name: string };
@@ -25,6 +26,7 @@ export function SettingsManager({
   currentUserId: string;
   userEmail: string;
   notificationPrefs: NotificationPrefs;
+  parents: Parent[];
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -34,6 +36,8 @@ export function SettingsManager({
       <ProfileSection initial={profileName} email={userEmail} />
       <Hairline margin="28px 0" />
       <CircleSection family={family} isAdmin={isAdmin} />
+      <Hairline margin="28px 0" />
+      <ParentsSection familyId={family.id} isAdmin={isAdmin} parents={parents} />
       <Hairline margin="28px 0" />
       <MembersSection family={family} isAdmin={isAdmin} members={members} pendingInvites={pendingInvites} currentUserId={currentUserId} />
       <Hairline margin="28px 0" />
@@ -155,6 +159,75 @@ function NotificationsSection({ familyId, initial }: { familyId: string; initial
           {pending ? "Enregistrement…" : "Enregistrer"}
         </button>
       </Saveable>
+    </section>
+  );
+}
+
+function ParentsSection({ familyId, isAdmin, parents }: { familyId: string; isAdmin: boolean; parents: Parent[] }) {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [open, setOpen] = useState(false);
+  const [err, setErr] = useState("");
+  const [pending, start] = useTransition();
+
+  const add = () => {
+    if (!name.trim()) return;
+    setErr("");
+    start(async () => {
+      const r = await addAnotherParent(familyId, name);
+      if (!r.ok) return setErr(r.error);
+      setName(""); setOpen(false);
+      router.refresh();
+    });
+  };
+
+  const remove = (parentId: string, parentName: string) => {
+    if (!window.confirm(`Supprimer ${parentName} ? Tout son historique (médicaments, visites, mesures, journal) sera définitivement perdu.`)) return;
+    setErr("");
+    start(async () => {
+      const r = await removeParent(parentId);
+      if (!r.ok) return setErr(r.error);
+      router.refresh();
+    });
+  };
+
+  return (
+    <section>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Eyebrow>Proches suivis</Eyebrow>
+        {isAdmin && !open && (
+          <button onClick={() => setOpen(true)} className="btn" style={{ background: c.sage900, color: "#F4F2EC", padding: "8px 15px", fontSize: 13, borderRadius: 9 }}>
+            <Icon name="plus" size={15} /> Ajouter
+          </button>
+        )}
+      </div>
+
+      <div style={{ marginTop: 8 }}>
+        {parents.map((p) => (
+          <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 13, padding: "13px 0", borderBottom: `1px solid ${c.hairline}` }}>
+            <Avatar name={p.name} size={34} bg={c.sageSoft} />
+            <p style={{ flex: 1, fontSize: 14.5, fontWeight: 500, color: c.sage900, margin: 0 }}>{p.name}</p>
+            {isAdmin && (
+              <button onClick={() => remove(p.id, p.name)} disabled={pending} aria-label="Supprimer"
+                style={{ background: "transparent", border: "none", cursor: "pointer", color: c.eyebrow, display: "flex", padding: 4 }}>
+                <Icon name="x" size={17} />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {open && (
+        <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input className="input" value={name} placeholder="Nom du proche"
+            style={{ flex: "1 1 200px" }}
+            onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
+          <button className="btn btn-primary" onClick={add} disabled={pending} style={{ borderRadius: 9 }}>{pending ? "…" : "Ajouter"}</button>
+          <button className="btn" onClick={() => { setOpen(false); setErr(""); }} style={{ background: "transparent", color: c.sub, borderRadius: 9 }}>Annuler</button>
+        </div>
+      )}
+
+      {err && <p style={{ color: c.danger, fontSize: 13.5, marginTop: 12 }}>{err}</p>}
     </section>
   );
 }
