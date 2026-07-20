@@ -86,6 +86,8 @@ Taille réduite (`0.58em/0.085em` → `0.5em/0.07em` dans `.fm-o::after`, `globa
 
 ✅ **Support multi-proches** (17/07/2026) : un cercle peut désormais suivre plusieurs proches (ex: mère et père), avec sélecteur sur l'Accueil, ajout/suppression dans Réglages, et toutes les données (Santé/Relais/Journal/Documents) correctement séparées par proche. Les 4 crons/emails géraient déjà nativement plusieurs proches sans modification (voir Phase 11).
 
+✅ **Google Search Console configuré** (17/07/2026) : domaine `famo.health` validé via un TXT record chez Namecheap (`google-site-verification=...`, host `@`, **ne jamais le supprimer** sous peine de perdre la validation). Utilisé pour forcer une réindexation manuelle après un changement de titre/description important (Inspection de l'URL → Demander une indexation). À l'origine du besoin : Google affichait encore l'ancien titre/ancienne icône (triangle Vercel) dans les résultats de recherche, simple décalage de cache d'indexation, pas un bug de l'app — vérifié que `/icon` et `/favicon.ico` répondaient correctement côté serveur avant de creuser côté Google.
+
 ⚠️ Pas encore fait :
 - **Stripe** : infra présente (`lib/stripe.ts`, webhook, cron) mais non branchée à l'UI, pas de mur de paiement. Volontairement en pause en attendant une structure légale (SIRET) — prix Premium à 15€/mois (poussé le 14/07/2026).
 - **Réputation email Resend** : domaine vérifié mais jeune, les emails peuvent atterrir en spam au début.
