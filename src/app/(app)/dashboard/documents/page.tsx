@@ -29,7 +29,7 @@ export default async function DocumentsPage() {
         title="Le coffre-fort du cercle"
         subtitle="Ordonnances, analyses, papiers importants"
       />
-      <DocumentsManager initial={docs ?? []} familyId={ctx.family.id} parentId={ctx.parent?.id ?? null} role={ctx.role} />
+      <DocumentsManager initial={docs ?? []} familyId={ctx.family.id} parentId={ctx.parent?.id ?? null} role={ctx.role} professionCategory={ctx.professionCategory} />
     </div>
   );
 }

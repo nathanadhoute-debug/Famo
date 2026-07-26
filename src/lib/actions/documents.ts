@@ -10,6 +10,9 @@ const MAX_SIZE = 15 * 1024 * 1024; // 15 Mo
 // Un professionnel n'a aucune visibilité sur les catégories personnelles
 // (identité, assurance...) — seulement les pièces à caractère médical.
 const PROFESSIONAL_CATEGORIES = ["Ordonnance", "Analyse", "Compte-rendu"];
+// Ajouter une ordonnance, comme modifier le traitement, est réservé aux
+// catégories habilitées à prescrire (voir PRESCRIBING_CATEGORIES dans health.ts).
+const PRESCRIBING_CATEGORIES = ["medecin_traitant", "chirurgien"];
 
 /** Téléverse un document dans le coffre-fort (storage + table documents). */
 export async function uploadDocument(formData: FormData): Promise<ActionResult> {
@@ -24,9 +27,14 @@ export async function uploadDocument(formData: FormData): Promise<ActionResult> 
   if (file.size > MAX_SIZE) return { ok: false, error: "Fichier trop volumineux (max 15 Mo)." };
 
   try {
-    const { userId, role } = await requireMembership(familyId, { allowProfessional: true });
-    if (role === "professional" && !PROFESSIONAL_CATEGORIES.includes(category)) {
-      return { ok: false, error: "Catégorie non autorisée pour un professionnel." };
+    const { userId, role, professionCategory } = await requireMembership(familyId, { allowProfessional: true });
+    if (role === "professional") {
+      if (!PROFESSIONAL_CATEGORIES.includes(category)) {
+        return { ok: false, error: "Catégorie non autorisée pour un professionnel." };
+      }
+      if (category === "Ordonnance" && !PRESCRIBING_CATEGORIES.includes(professionCategory ?? "")) {
+        return { ok: false, error: "Seuls le médecin traitant et le chirurgien peuvent ajouter une ordonnance." };
+      }
     }
     const admin = createAdminClient();
 

@@ -18,6 +18,7 @@ type Doc = {
 
 const CATEGORIES = ["Ordonnance", "Analyse", "Compte-rendu", "Identité", "Assurance", "Autre"];
 const PROFESSIONAL_CATEGORIES = ["Ordonnance", "Analyse", "Compte-rendu"];
+const PRESCRIBING_CATEGORIES = ["medecin_traitant", "chirurgien"];
 const CAT_COLOR: Record<string, string> = {
   Ordonnance: c.sage700, Analyse: c.terracotta, "Compte-rendu": "#6B8E9E",
   Identité: "#8E6B9E", Assurance: c.amber, Autre: c.eyebrow,
@@ -37,15 +38,20 @@ function kind(mime: string | null) {
   return "Fichier";
 }
 
-export function DocumentsManager({ initial, familyId, parentId, role }: {
+export function DocumentsManager({ initial, familyId, parentId, role, professionCategory }: {
   initial: Doc[];
   familyId: string;
   parentId: string | null;
   role?: string;
+  professionCategory?: string | null;
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
-  const categories = role === "professional" ? PROFESSIONAL_CATEGORIES : CATEGORIES;
+  const isProfessional = role === "professional";
+  const canAddOrdonnance = !isProfessional || PRESCRIBING_CATEGORIES.includes(professionCategory ?? "");
+  const categories = isProfessional
+    ? PROFESSIONAL_CATEGORIES.filter((cat) => cat !== "Ordonnance" || canAddOrdonnance)
+    : CATEGORIES;
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState("");
   const [category, setCategory] = useState(categories[0]);

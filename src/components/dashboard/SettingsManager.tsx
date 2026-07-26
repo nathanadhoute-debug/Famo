@@ -367,7 +367,7 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
               Accès limité : consultation des constantes et documents, ajout de constantes/documents, cocher les prises de médicaments.
               {" "}Peut écrire au journal mais ne voit pas les notes de la famille (seulement les siennes).
               {" "}Reçoit obligatoirement les alertes email (ordonnance, visite, médicament non pris).
-              {" "}Seuls le médecin traitant et le chirurgien peuvent modifier le traitement.
+              {" "}Seuls le médecin traitant et le chirurgien peuvent modifier le traitement et ajouter une ordonnance.
             </p>
           )}
         </div>
