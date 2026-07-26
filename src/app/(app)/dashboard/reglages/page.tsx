@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentFamily, getFamilyMembers } from "@/lib/family";
 import { PageHead } from "@/components/dashboard/editorial";
 import { SettingsManager } from "@/components/dashboard/SettingsManager";
+import { ProfessionalSettings } from "@/components/dashboard/ProfessionalSettings";
 
 export const metadata = { title: "Réglages — Famō" };
 
@@ -10,6 +11,19 @@ export default async function ReglagesPage() {
   const ctx = await getCurrentFamily();
   if (!ctx) redirect("/onboarding");
   const supabase = await createClient();
+
+  // Un professionnel n'a accès qu'à son propre profil — pas à la liste des
+  // membres du cercle, à sa gestion, ni aux notifications (obligatoires,
+  // voir lib/invitations.ts). On évite même de charger ces données.
+  if (ctx.role === "professional") {
+    const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", ctx.user.id).maybeSingle();
+    return (
+      <div style={{ maxWidth: 720, margin: "0 auto", padding: "clamp(20px,3vw,34px) clamp(16px,4vw,36px) 48px" }}>
+        <PageHead eyebrow="Réglages" title="Mon profil" subtitle="Vos informations personnelles" />
+        <ProfessionalSettings profileName={profile?.full_name ?? ""} userEmail={ctx.user.email ?? ""} />
+      </div>
+    );
+  }
 
   const [{ data: profile }, members, { data: invites }, { data: myPrefs }] = await Promise.all([
     supabase.from("profiles").select("full_name").eq("id", ctx.user.id).maybeSingle(),

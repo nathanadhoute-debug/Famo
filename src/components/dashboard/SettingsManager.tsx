@@ -66,7 +66,7 @@ function Saveable({ children }: { children: React.ReactNode }) {
   return <div style={{ maxWidth: 420 }}>{children}</div>;
 }
 
-function ProfileSection({ initial, email }: { initial: string; email: string }) {
+export function ProfileSection({ initial, email }: { initial: string; email: string }) {
   const router = useRouter();
   const [name, setName] = useState(initial);
   const [msg, setMsg] = useState(""); const [err, setErr] = useState("");
@@ -364,7 +364,9 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
           )}
           {isProfessional && (
             <p style={{ fontSize: 12.5, color: c.sub, marginTop: 8, lineHeight: 1.5 }}>
-              Accès limité : consultation, ajout de constantes, journal et documents, cocher les prises de médicaments.
+              Accès limité : consultation des constantes et documents, ajout de constantes/documents, cocher les prises de médicaments.
+              {" "}Peut écrire au journal mais ne voit pas les notes de la famille (seulement les siennes).
+              {" "}Reçoit obligatoirement les alertes email (ordonnance, visite, médicament non pris).
               {" "}Seuls le médecin traitant et le chirurgien peuvent modifier le traitement.
             </p>
           )}

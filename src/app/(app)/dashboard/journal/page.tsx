@@ -11,13 +11,19 @@ export default async function JournalPage() {
   if (!ctx) redirect("/onboarding");
   const supabase = await createClient();
 
+  // Un professionnel ne voit que ses propres notes — jamais celles écrites
+  // par la famille, qui peuvent contenir des informations personnelles.
+  // La famille, elle, voit tout (ses notes + celles des professionnels).
+  const isProfessional = ctx.role === "professional";
+  let entriesQuery = supabase.from("journal_entries")
+    .select("id, content, tags, created_at, author_id")
+    .eq("family_id", ctx.family.id)
+    .eq("parent_id", ctx.parent?.id ?? "");
+  if (isProfessional) entriesQuery = entriesQuery.eq("author_id", ctx.user.id);
+
   const [{ data: entriesRaw }, members] = await Promise.all([
-    supabase.from("journal_entries")
-      .select("id, content, tags, created_at, author_id")
-      .eq("family_id", ctx.family.id)
-      .eq("parent_id", ctx.parent?.id ?? "")
-      .order("created_at", { ascending: false }),
-    getFamilyMembers(ctx.family.id),
+    entriesQuery.order("created_at", { ascending: false }),
+    isProfessional ? Promise.resolve([]) : getFamilyMembers(ctx.family.id),
   ]);
 
   const names = new Map(members.map((m) => [m.userId, m.name]));

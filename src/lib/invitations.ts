@@ -45,10 +45,10 @@ export async function acceptInvitation(token: string): Promise<AcceptResult> {
       role: invite.role,
       profession_category: isProfessional ? invite.profession_category : null,
       profession_detail: isProfessional ? invite.profession_detail : null,
-      // Un professionnel ne reçoit pas les alertes familiales par défaut —
-      // il peut les réactiver lui-même ensuite dans ses réglages de notification.
+      // Un professionnel reçoit obligatoirement les 3 alertes — cohérent avec
+      // son rôle de suivi médical, pas modifiable ensuite (voir circle.ts).
       ...(isProfessional
-        ? { notify_rx_expiry: false, notify_visit_reminder: false, notify_overdue_doses: false }
+        ? { notify_rx_expiry: true, notify_visit_reminder: true, notify_overdue_doses: true }
         : {}),
     });
     if (memErr) return { ok: false, error: memErr.message };

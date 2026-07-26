@@ -56,14 +56,19 @@ export async function removeMember(familyId: string, userId: string): Promise<Ac
   }
 }
 
-/** Met à jour les préférences de notification email de l'utilisateur connecté. */
+/**
+ * Met à jour les préférences de notification email de l'utilisateur connecté.
+ * Un professionnel ne peut pas appeler cette action (allowProfessional omis) :
+ * ses 3 alertes sont obligatoires, posées une fois pour toutes à l'acceptation
+ * de l'invitation (voir lib/invitations.ts) et non modifiables ensuite.
+ */
 export async function updateNotificationPrefs(familyId: string, prefs: {
   notifyRxExpiry: boolean;
   notifyVisitReminder: boolean;
   notifyOverdueDoses: boolean;
 }): Promise<ActionResult> {
   try {
-    const { userId } = await requireMembership(familyId, { allowProfessional: true });
+    const { userId } = await requireMembership(familyId);
     const admin = createAdminClient();
     const { error } = await admin.from("family_members").update({
       notify_rx_expiry: prefs.notifyRxExpiry,
