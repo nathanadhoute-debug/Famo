@@ -6,7 +6,7 @@ import { Logo } from "@/components/Logo";
 import { Icon } from "@/components/Icon";
 import { c, font } from "@/lib/theme";
 
-const NAV = [
+const NAV_FAMILY = [
   { href: "/dashboard",           label: "Accueil",   icon: "home" },
   { href: "/dashboard/sante",     label: "Santé",     icon: "activity" },
   { href: "/dashboard/relais",    label: "Relais",    icon: "users" },
@@ -15,17 +15,28 @@ const NAV = [
   { href: "/dashboard/reglages",  label: "Réglages",  icon: "settings" },
 ];
 
+// Un professionnel invité n'a pas accès au planning familial ni à
+// l'administration du cercle — non pertinents pour un intervenant extérieur.
+const NAV_PROFESSIONAL = [
+  { href: "/dashboard",           label: "Accueil",   icon: "home" },
+  { href: "/dashboard/sante",     label: "Santé",     icon: "activity" },
+  { href: "/dashboard/journal",   label: "Journal",   icon: "book" },
+  { href: "/dashboard/documents", label: "Documents", icon: "folder" },
+];
+
 export function Shell({
-  familyName, parentName, userName, children,
+  familyName, parentName, userName, role, children,
 }: {
   familyName: string;
   parentName: string | null;
   userName: string;
+  role?: string;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const initials = userName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
+  const NAV = role === "professional" ? NAV_PROFESSIONAL : NAV_FAMILY;
 
   const nav = (
     <nav style={{ display: "grid", gap: 4 }}>

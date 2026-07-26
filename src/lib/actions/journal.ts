@@ -13,7 +13,7 @@ export async function addEntry(input: {
 }): Promise<ActionResult> {
   if (!input.content.trim()) return { ok: false, error: "La note est vide." };
   try {
-    const { userId } = await requireMembership(input.familyId);
+    const { userId } = await requireMembership(input.familyId, { allowProfessional: true });
     const admin = createAdminClient();
     const { error } = await admin.from("journal_entries").insert({
       family_id: input.familyId,
@@ -37,7 +37,7 @@ export async function deleteEntry(entryId: string): Promise<ActionResult> {
     const { data: entry } = await admin
       .from("journal_entries").select("family_id, author_id").eq("id", entryId).maybeSingle();
     if (!entry) return { ok: false, error: "Note introuvable." };
-    const { userId, role } = await requireMembership(entry.family_id);
+    const { userId, role } = await requireMembership(entry.family_id, { allowProfessional: true });
     if (entry.author_id !== userId && role !== "admin") {
       return { ok: false, error: "Seul l'auteur ou un admin peut supprimer cette note." };
     }

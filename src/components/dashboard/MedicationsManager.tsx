@@ -21,19 +21,31 @@ type Medication = {
 
 const emptyForm = { name: "", dose: "", category: "Autre", critical: false, rxLabel: "", rxExpiresAt: "", times: "" };
 
-export function MedicationsManager({ initial, familyId, parentId }: {
+const PROFESSION_LABEL: Record<string, string> = {
+  aide_soignant: "Aide-soignant", infirmier: "Infirmier", kine: "Kiné",
+  medecin_traitant: "Médecin traitant", chirurgien: "Chirurgien", autre: "Autre",
+};
+
+export function MedicationsManager({ initial, familyId, parentId, role, professionCategory }: {
   initial: Medication[];
   familyId: string;
   parentId: string | null;
+  role?: string;
+  professionCategory?: string | null;
 }) {
   const router = useRouter();
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
+  const [signed, setSigned] = useState(false);
   const [pending, start] = useTransition();
+
+  const isProfessional = role === "professional";
+  const signatureLabel = professionCategory ? (PROFESSION_LABEL[professionCategory] ?? professionCategory) : "professionnel";
 
   const submit = () => {
     if (!parentId) { setError("Ajoutez d'abord un proche dans le cercle."); return; }
+    if (isProfessional && !signed) { setError("Confirmez la certification ci-dessous avant d'enregistrer."); return; }
     setError("");
     start(async () => {
       const res = await addMedication({
@@ -50,11 +62,13 @@ export function MedicationsManager({ initial, familyId, parentId }: {
       if (!res.ok) return setError(res.error);
       setForm(emptyForm);
       setOpen(false);
+      setSigned(false);
       router.refresh();
     });
   };
 
   const deactivate = (id: string) => {
+    if (isProfessional && !window.confirm(`Je certifie être à l'origine de cette modification, en tant que ${signatureLabel}.`)) return;
     start(async () => {
       const res = await deactivateMedication(id);
       if (!res.ok) return setError(res.error);
@@ -149,12 +163,19 @@ export function MedicationsManager({ initial, familyId, parentId }: {
               onChange={(e) => setForm((f) => ({ ...f, critical: e.target.checked }))} />
             Médicament critique (ne jamais oublier)
           </label>
+          {isProfessional && (
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 12, fontSize: 13.5, color: c.sage900, cursor: "pointer" }}>
+              <input type="checkbox" checked={signed} style={{ marginTop: 2 }}
+                onChange={(e) => setSigned(e.target.checked)} />
+              Je certifie être à l&apos;origine de cette modification, en tant que {signatureLabel}.
+            </label>
+          )}
           {error && <p style={{ color: c.danger, fontSize: 13.5, marginTop: 12 }}>{error}</p>}
           <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
             <button className="btn btn-primary" onClick={submit} disabled={pending} style={{ borderRadius: 9 }}>
               {pending ? "Enregistrement…" : "Enregistrer"}
             </button>
-            <button className="btn" onClick={() => { setOpen(false); setError(""); }} style={{ background: "transparent", color: c.sub, borderRadius: 9 }}>
+            <button className="btn" onClick={() => { setOpen(false); setError(""); setSigned(false); }} style={{ background: "transparent", color: c.sub, borderRadius: 9 }}>
               Annuler
             </button>
           </div>

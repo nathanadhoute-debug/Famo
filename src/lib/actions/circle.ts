@@ -63,7 +63,7 @@ export async function updateNotificationPrefs(familyId: string, prefs: {
   notifyOverdueDoses: boolean;
 }): Promise<ActionResult> {
   try {
-    const { userId } = await requireMembership(familyId);
+    const { userId } = await requireMembership(familyId, { allowProfessional: true });
     const admin = createAdminClient();
     const { error } = await admin.from("family_members").update({
       notify_rx_expiry: prefs.notifyRxExpiry,

@@ -21,7 +21,7 @@ export async function acceptInvitation(token: string): Promise<AcceptResult> {
 
   const { data: invite, error } = await admin
     .from("invitations")
-    .select("id, family_id, role, email, expires_at, accepted_at")
+    .select("id, family_id, role, email, expires_at, accepted_at, profession_category, profession_detail")
     .eq("token", token)
     .maybeSingle();
 
@@ -38,8 +38,18 @@ export async function acceptInvitation(token: string): Promise<AcceptResult> {
     .eq("family_id", invite.family_id).eq("user_id", user.id).maybeSingle();
 
   if (!existing) {
+    const isProfessional = invite.role === "professional";
     const { error: memErr } = await admin.from("family_members").insert({
-      family_id: invite.family_id, user_id: user.id, role: invite.role,
+      family_id: invite.family_id,
+      user_id: user.id,
+      role: invite.role,
+      profession_category: isProfessional ? invite.profession_category : null,
+      profession_detail: isProfessional ? invite.profession_detail : null,
+      // Un professionnel ne reçoit pas les alertes familiales par défaut —
+      // il peut les réactiver lui-même ensuite dans ses réglages de notification.
+      ...(isProfessional
+        ? { notify_rx_expiry: false, notify_visit_reminder: false, notify_overdue_doses: false }
+        : {}),
     });
     if (memErr) return { ok: false, error: memErr.message };
   }

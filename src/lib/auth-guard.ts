@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { MemberRole } from "@/lib/family";
+import type { MemberRole, ProfessionCategory } from "@/lib/family";
 
 /**
  * Garde de sécurité pour les Server Actions.
@@ -8,18 +8,23 @@ import type { MemberRole } from "@/lib/family";
  * et son rôle. Les écritures qui suivent utilisent le client admin (service
  * role) pour contourner proprement les soucis de RLS — l'autorisation est
  * donc portée ici, côté serveur, avant toute écriture.
+ *
+ * `allowProfessional` : refus par défaut pour le rôle `professional` — chaque
+ * action doit explicitement l'autoriser. Un professionnel invité par la
+ * famille a un accès volontairement plus restreint qu'un membre (voir le
+ * plan "Accès professionnel de santé").
  */
 export async function requireMembership(
   familyId: string,
-  opts: { admin?: boolean } = {}
-): Promise<{ userId: string; email: string | null; role: MemberRole }> {
+  opts: { admin?: boolean; allowProfessional?: boolean } = {}
+): Promise<{ userId: string; email: string | null; role: MemberRole; professionCategory: ProfessionCategory | null }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Vous devez être connecté.");
 
   const { data: membership } = await supabase
     .from("family_members")
-    .select("role")
+    .select("role, profession_category")
     .eq("family_id", familyId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -33,6 +38,14 @@ export async function requireMembership(
   if (role === "readonly") {
     throw new Error("Votre accès est en lecture seule.");
   }
+  if (role === "professional" && !opts.allowProfessional) {
+    throw new Error("Cette action n'est pas disponible pour votre profil professionnel.");
+  }
 
-  return { userId: user.id, email: user.email ?? null, role };
+  return {
+    userId: user.id,
+    email: user.email ?? null,
+    role,
+    professionCategory: (membership.profession_category as ProfessionCategory | null) ?? null,
+  };
 }

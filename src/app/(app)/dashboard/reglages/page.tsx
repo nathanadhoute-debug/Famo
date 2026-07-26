@@ -15,7 +15,7 @@ export default async function ReglagesPage() {
     supabase.from("profiles").select("full_name").eq("id", ctx.user.id).maybeSingle(),
     getFamilyMembers(ctx.family.id),
     supabase.from("invitations")
-      .select("id, email, role")
+      .select("id, email, role, profession_category")
       .eq("family_id", ctx.family.id)
       .is("accepted_at", null)
       .order("created_at", { ascending: false }),
@@ -31,8 +31,8 @@ export default async function ReglagesPage() {
         profileName={profile?.full_name ?? ""}
         family={ctx.family}
         isAdmin={ctx.role === "admin"}
-        members={members.map((m) => ({ userId: m.userId, name: m.name, role: m.role }))}
-        pendingInvites={invites ?? []}
+        members={members.map((m) => ({ userId: m.userId, name: m.name, role: m.role, professionCategory: m.professionCategory, professionDetail: m.professionDetail }))}
+        pendingInvites={(invites ?? []).map((i) => ({ id: i.id, email: i.email, role: i.role, professionCategory: i.profession_category }))}
         currentUserId={ctx.user.id}
         userEmail={ctx.user.email ?? ""}
         notificationPrefs={{

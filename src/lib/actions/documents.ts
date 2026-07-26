@@ -20,7 +20,7 @@ export async function uploadDocument(formData: FormData): Promise<ActionResult> 
   if (file.size > MAX_SIZE) return { ok: false, error: "Fichier trop volumineux (max 15 Mo)." };
 
   try {
-    const { userId } = await requireMembership(familyId);
+    const { userId } = await requireMembership(familyId, { allowProfessional: true });
     const admin = createAdminClient();
 
     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
@@ -61,7 +61,7 @@ export async function getDocumentUrl(documentId: string): Promise<{ ok: true; ur
     const { data: doc } = await admin
       .from("documents").select("family_id, file_url").eq("id", documentId).maybeSingle();
     if (!doc) return { ok: false, error: "Document introuvable." };
-    await requireMembership(doc.family_id);
+    await requireMembership(doc.family_id, { allowProfessional: true });
 
     const { data, error } = await admin.storage.from(BUCKET).createSignedUrl(doc.file_url, 60);
     if (error || !data) return { ok: false, error: error?.message ?? "Lien indisponible." };
@@ -78,7 +78,7 @@ export async function deleteDocument(documentId: string): Promise<ActionResult> 
     const { data: doc } = await admin
       .from("documents").select("family_id, file_url, uploaded_by").eq("id", documentId).maybeSingle();
     if (!doc) return { ok: false, error: "Document introuvable." };
-    const { userId, role } = await requireMembership(doc.family_id);
+    const { userId, role } = await requireMembership(doc.family_id, { allowProfessional: true });
     if (doc.uploaded_by !== userId && role !== "admin") {
       return { ok: false, error: "Seul l'auteur ou un admin peut supprimer ce document." };
     }

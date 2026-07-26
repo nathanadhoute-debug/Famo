@@ -65,7 +65,7 @@ export default async function SantePage() {
 
       <Eyebrow>Médicaments</Eyebrow>
       <div style={{ marginTop: 14 }}>
-        <MedicationsManager initial={medications ?? []} familyId={ctx.family.id} parentId={ctx.parent?.id ?? null} />
+        <MedicationsManager initial={medications ?? []} familyId={ctx.family.id} parentId={ctx.parent?.id ?? null} role={ctx.role} professionCategory={ctx.professionCategory} />
       </div>
 
       <Hairline margin="30px 0" />

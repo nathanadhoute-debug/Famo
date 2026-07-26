@@ -8,12 +8,16 @@ import { Eyebrow, Hairline, Avatar } from "@/components/dashboard/editorial";
 import { updateProfile, renameFamily, removeMember, cancelInvite, updateNotificationPrefs, addAnotherParent, removeParent } from "@/lib/actions/circle";
 import { createInvite } from "@/lib/actions/invites";
 
-type Member = { userId: string; name: string; role: string };
-type Invite = { id: string; email: string; role: string };
+type Member = { userId: string; name: string; role: string; professionCategory?: string | null; professionDetail?: string | null };
+type Invite = { id: string; email: string; role: string; professionCategory?: string | null };
 type NotificationPrefs = { rxExpiry: boolean; visitReminder: boolean; overdueDoses: boolean };
 type Parent = { id: string; name: string };
 
-const ROLE_LABEL: Record<string, string> = { admin: "Admin", member: "Membre", readonly: "Lecture seule" };
+const ROLE_LABEL: Record<string, string> = { admin: "Admin", member: "Membre", readonly: "Lecture seule", professional: "Professionnel" };
+const PROFESSION_LABEL: Record<string, string> = {
+  aide_soignant: "Aide-soignant", infirmier: "Infirmier", kine: "Kiné",
+  medecin_traitant: "Médecin traitant", chirurgien: "Chirurgien", autre: "Autre",
+};
 
 export function SettingsManager({
   profileName, family, isAdmin, members, pendingInvites, currentUserId, userEmail, notificationPrefs, parents,
@@ -241,20 +245,30 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
 }) {
   const router = useRouter();
   const [email, setEmail] = useState(""); const [role, setRole] = useState("member");
+  const [professionCategory, setProfessionCategory] = useState("");
+  const [professionDetail, setProfessionDetail] = useState("");
   const [err, setErr] = useState("");
   const [result, setResult] = useState<{ email: string; link: string; emailSent: boolean; emailError?: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [pending, start] = useTransition();
 
+  const isProfessional = role === "professional";
+
   const invite = () => {
     if (!email.trim()) return;
+    if (isProfessional && !professionCategory) { setErr("Indiquez la catégorie du professionnel."); return; }
     setErr(""); setResult(null); setCopied(false);
     const target = email.trim();
     start(async () => {
-      const r = await createInvite({ familyId: family.id, email: target, role: role as any });
+      const r = await createInvite({
+        familyId: family.id,
+        email: target,
+        role: role as any,
+        ...(isProfessional ? { professionCategory: professionCategory as any, professionDetail: professionDetail || undefined } : {}),
+      });
       if (!r.ok) return setErr(r.error);
       setResult({ email: target, link: `${location.origin}/invite/${r.token}`, emailSent: r.emailSent, emailError: r.emailError });
-      setEmail(""); router.refresh();
+      setEmail(""); setProfessionCategory(""); setProfessionDetail(""); router.refresh();
     });
   };
 
@@ -277,7 +291,12 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
               <p style={{ fontSize: 14.5, fontWeight: 500, color: c.sage900, margin: 0 }}>
                 {m.name}{m.userId === currentUserId && <span style={{ color: c.eyebrow, fontWeight: 400 }}> · vous</span>}
               </p>
-              <p style={{ fontSize: 12.5, color: c.eyebrow, margin: "1px 0 0" }}>{ROLE_LABEL[m.role] ?? m.role}</p>
+              <p style={{ fontSize: 12.5, color: c.eyebrow, margin: "1px 0 0" }}>
+                {ROLE_LABEL[m.role] ?? m.role}
+                {m.role === "professional" && m.professionCategory && (
+                  <> · {PROFESSION_LABEL[m.professionCategory] ?? m.professionCategory}{m.professionDetail ? ` (${m.professionDetail})` : ""}</>
+                )}
+              </p>
             </div>
             {isAdmin && m.userId !== currentUserId && (
               <button onClick={() => kick(m.userId)} disabled={pending} aria-label="Retirer"
@@ -296,7 +315,10 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
             <div key={i.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", borderBottom: `1px dashed ${c.hairline}` }}>
               <span style={{ color: c.eyebrow, display: "flex" }}><Icon name="mail" size={17} /></span>
               <span style={{ flex: 1, fontSize: 14, color: c.sage900 }}>{i.email}</span>
-              <span style={{ fontSize: 12, color: c.eyebrow }}>{ROLE_LABEL[i.role] ?? i.role}</span>
+              <span style={{ fontSize: 12, color: c.eyebrow }}>
+                {ROLE_LABEL[i.role] ?? i.role}
+                {i.role === "professional" && i.professionCategory && ` · ${PROFESSION_LABEL[i.professionCategory] ?? i.professionCategory}`}
+              </span>
               {isAdmin && (
                 <button onClick={() => cancel(i.id)} disabled={pending} aria-label="Annuler"
                   style={{ background: "transparent", border: "none", cursor: "pointer", color: c.eyebrow, display: "flex", padding: 4 }}>
@@ -314,13 +336,38 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <input className="input" type="email" value={email} placeholder="proche@exemple.fr" style={{ flex: "1 1 200px" }}
               onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && invite()} />
-            <select className="select" value={role} onChange={(e) => setRole(e.target.value)} style={{ width: 150 }}>
+            <select className="select" value={role} onChange={(e) => setRole(e.target.value)} style={{ width: 170 }}>
               <option value="member">Membre</option>
               <option value="admin">Admin</option>
               <option value="readonly">Lecture seule</option>
+              <option value="professional">Professionnel de santé</option>
             </select>
-            <button className="btn btn-primary" onClick={invite} disabled={pending} style={{ borderRadius: 9 }}>{pending ? "…" : "Inviter"}</button>
+            {!isProfessional && (
+              <button className="btn btn-primary" onClick={invite} disabled={pending} style={{ borderRadius: 9 }}>{pending ? "…" : "Inviter"}</button>
+            )}
           </div>
+
+          {isProfessional && (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+              <select className="select" value={professionCategory} onChange={(e) => setProfessionCategory(e.target.value)} style={{ flex: "1 1 200px" }}>
+                <option value="">Catégorie…</option>
+                {Object.entries(PROFESSION_LABEL).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+              {professionCategory === "autre" && (
+                <input className="input" value={professionDetail} placeholder="Préciser (optionnel)" style={{ flex: "1 1 200px" }}
+                  onChange={(e) => setProfessionDetail(e.target.value)} />
+              )}
+              <button className="btn btn-primary" onClick={invite} disabled={pending} style={{ borderRadius: 9 }}>{pending ? "…" : "Inviter"}</button>
+            </div>
+          )}
+          {isProfessional && (
+            <p style={{ fontSize: 12.5, color: c.sub, marginTop: 8, lineHeight: 1.5 }}>
+              Accès limité : consultation, ajout de constantes, journal et documents, cocher les prises de médicaments.
+              {" "}Seuls le médecin traitant et le chirurgien peuvent modifier le traitement.
+            </p>
+          )}
         </div>
       )}
 

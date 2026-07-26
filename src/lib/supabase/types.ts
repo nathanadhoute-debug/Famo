@@ -46,27 +46,33 @@ export type Database = {
           id:                     string
           family_id:              string
           user_id:                string
-          role:                   'admin' | 'member' | 'readonly'
+          role:                   'admin' | 'member' | 'readonly' | 'professional'
           joined_at:              string
           notify_rx_expiry:       boolean
           notify_visit_reminder:  boolean
           notify_overdue_doses:   boolean
+          profession_category:    'aide_soignant' | 'infirmier' | 'kine' | 'medecin_traitant' | 'chirurgien' | 'autre' | null
+          profession_detail:      string | null
         }
         Insert: {
           id?:                     string
           family_id:               string
           user_id:                 string
-          role?:                   'admin' | 'member' | 'readonly'
+          role?:                   'admin' | 'member' | 'readonly' | 'professional'
           joined_at?:              string
           notify_rx_expiry?:       boolean
           notify_visit_reminder?:  boolean
           notify_overdue_doses?:   boolean
+          profession_category?:    'aide_soignant' | 'infirmier' | 'kine' | 'medecin_traitant' | 'chirurgien' | 'autre' | null
+          profession_detail?:      string | null
         }
         Update: {
-          role?:                   'admin' | 'member' | 'readonly'
+          role?:                   'admin' | 'member' | 'readonly' | 'professional'
           notify_rx_expiry?:       boolean
           notify_visit_reminder?:  boolean
           notify_overdue_doses?:   boolean
+          profession_category?:    'aide_soignant' | 'infirmier' | 'kine' | 'medecin_traitant' | 'chirurgien' | 'autre' | null
+          profession_detail?:      string | null
         }
         Relationships: []
       }
@@ -96,22 +102,26 @@ export type Database = {
           family_id:   string
           invited_by:  string
           email:       string
-          role:        'admin' | 'member' | 'readonly'
+          role:        'admin' | 'member' | 'readonly' | 'professional'
           token:       string
           accepted_at: string | null
           expires_at:  string
           created_at:  string
+          profession_category: 'aide_soignant' | 'infirmier' | 'kine' | 'medecin_traitant' | 'chirurgien' | 'autre' | null
+          profession_detail:   string | null
         }
         Insert: {
           id?:          string
           family_id:    string
           invited_by:   string
           email:        string
-          role?:        'admin' | 'member' | 'readonly'
+          role?:        'admin' | 'member' | 'readonly' | 'professional'
           token?:       string
           accepted_at?: string | null
           expires_at?:  string
           created_at?:  string
+          profession_category?: 'aide_soignant' | 'infirmier' | 'kine' | 'medecin_traitant' | 'chirurgien' | 'autre' | null
+          profession_detail?:   string | null
         }
         Update: {
           accepted_at?: string | null
@@ -183,6 +193,8 @@ export type Database = {
           rx_expires_at: string | null
           active:        boolean
           created_at:    string
+          modified_by:   string | null
+          modified_at:   string | null
         }
         Insert: {
           id?:            string
@@ -196,6 +208,8 @@ export type Database = {
           rx_expires_at?: string | null
           active?:        boolean
           created_at?:    string
+          modified_by?:   string | null
+          modified_at?:   string | null
         }
         Update: {
           name?:          string
@@ -205,6 +219,8 @@ export type Database = {
           rx_label?:      string | null
           rx_expires_at?: string | null
           active?:        boolean
+          modified_by?:   string | null
+          modified_at?:   string | null
         }
         Relationships: []
       }
@@ -498,7 +514,8 @@ export type Database = {
       }
     }
     Enums: {
-      member_role:   'admin' | 'member' | 'readonly'
+      member_role:   'admin' | 'member' | 'readonly' | 'professional'
+      profession_category: 'aide_soignant' | 'infirmier' | 'kine' | 'medecin_traitant' | 'chirurgien' | 'autre'
       med_category:  'Cardiologie' | 'Diabète' | 'Antalgique' | 'Neurologie' | 'Pneumologie' | 'Rhumatologie' | 'Autre'
       journal_tag:   'santé' | 'rdv' | 'humeur' | 'repas' | 'urgence' | 'note' | 'médicament'
       doc_category:  'Ordonnance' | 'Analyse' | 'Compte-rendu' | 'Identité' | 'Assurance' | 'Autre'

@@ -14,7 +14,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const userName = profile?.full_name || ctx.user.email || "Vous";
 
   return (
-    <Shell familyName={ctx.family.name} parentName={ctx.parent?.name ?? null} userName={userName}>
+    <Shell familyName={ctx.family.name} parentName={ctx.parent?.name ?? null} userName={userName} role={ctx.role}>
       {children}
     </Shell>
   );

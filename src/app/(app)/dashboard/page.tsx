@@ -5,6 +5,7 @@ import { getCurrentFamily, getFamilyMembers } from "@/lib/family";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline, Avatar, Sparkline } from "@/components/dashboard/editorial";
 import { ParentSwitcher } from "@/components/dashboard/ParentSwitcher";
+import { ProfessionalHome } from "@/components/dashboard/ProfessionalHome";
 import { initials, timeAgo, parseNumeric, mondayOf, parisDateKey } from "@/lib/format";
 import { deriveParentStatus } from "@/lib/status";
 import { c, font } from "@/lib/theme";
@@ -68,6 +69,26 @@ export default async function DashboardHome() {
 
   // Journal
   const lastEntry = journalRaw?.[0] ?? null;
+
+  // Un professionnel invité voit une vue centrée sur le proche, sans les
+  // éléments sociaux familiaux (relais, avatars des membres, réglages).
+  if (ctx.role === "professional") {
+    return (
+      <ProfessionalHome
+        parent={ctx.parent}
+        parents={ctx.parents}
+        activeParentId={ctx.parent?.id ?? ""}
+        overdueDoses={overdue}
+        latestVital={latestVital}
+        vitalHistory={history}
+        lastEntry={lastEntry ? {
+          content: lastEntry.content,
+          authorName: nameById(lastEntry.author_id) ?? "Membre",
+          created_at: lastEntry.created_at,
+        } : null}
+      />
+    );
+  }
 
   // État global du proche, dérivé des vraies données (médicaments, santé, journal).
   const parentFirst = ctx.parent?.name.split(/\s+/)[0] ?? null;

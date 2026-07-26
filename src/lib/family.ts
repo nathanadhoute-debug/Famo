@@ -1,13 +1,15 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
-export type MemberRole = "admin" | "member" | "readonly";
+export type MemberRole = "admin" | "member" | "readonly" | "professional";
+export type ProfessionCategory = "aide_soignant" | "infirmier" | "kine" | "medecin_traitant" | "chirurgien" | "autre";
 export type ParentLite = { id: string; name: string; birth_date: string | null };
 
 export type CurrentFamily = {
   user:    { id: string; email: string | null };
   family:  { id: string; name: string };
   role:    MemberRole;
+  professionCategory: ProfessionCategory | null;
   parent:  ParentLite | null;
   parents: ParentLite[];
 };
@@ -30,7 +32,7 @@ export async function getCurrentFamily(): Promise<CurrentFamily | null> {
 
   const { data: membership } = await supabase
     .from("family_members")
-    .select("family_id, role")
+    .select("family_id, role, profession_category")
     .eq("user_id", user.id)
     .order("joined_at", { ascending: true })
     .limit(1)
@@ -61,12 +63,20 @@ export async function getCurrentFamily(): Promise<CurrentFamily | null> {
     user:   { id: user.id, email: user.email ?? null },
     family: { id: family.id, name: family.name },
     role:   membership.role as MemberRole,
+    professionCategory: (membership.profession_category as ProfessionCategory | null) ?? null,
     parent,
     parents,
   };
 }
 
-export type FamilyMember = { userId: string; name: string; role: MemberRole; joinedAt: string };
+export type FamilyMember = {
+  userId: string;
+  name: string;
+  role: MemberRole;
+  joinedAt: string;
+  professionCategory: ProfessionCategory | null;
+  professionDetail: string | null;
+};
 
 /**
  * Membres du cercle avec leur nom d'affichage.
@@ -78,7 +88,7 @@ export async function getFamilyMembers(familyId: string): Promise<FamilyMember[]
 
   const { data: members } = await supabase
     .from("family_members")
-    .select("user_id, role, joined_at")
+    .select("user_id, role, joined_at, profession_category, profession_detail")
     .eq("family_id", familyId)
     .order("joined_at", { ascending: true });
 
@@ -94,5 +104,7 @@ export async function getFamilyMembers(familyId: string): Promise<FamilyMember[]
     name: names.get(m.user_id) || "Membre",
     role: m.role as MemberRole,
     joinedAt: m.joined_at,
+    professionCategory: (m.profession_category as ProfessionCategory | null) ?? null,
+    professionDetail: m.profession_detail ?? null,
   }));
 }

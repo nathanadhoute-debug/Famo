@@ -2,7 +2,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireMembership } from "@/lib/auth-guard";
-import type { MemberRole } from "@/lib/family";
+import type { MemberRole, ProfessionCategory } from "@/lib/family";
 import type { InviteResult } from "@/lib/actions/types";
 import { SITE_URL } from "@/lib/site";
 
@@ -16,12 +16,17 @@ export async function createInvite(input: {
   familyId: string;
   email: string;
   role?: MemberRole;
+  professionCategory?: ProfessionCategory;
+  professionDetail?: string;
 }): Promise<InviteResult> {
   const email = input.email.trim().toLowerCase();
   const role = input.role ?? "member";
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { ok: false, error: "Adresse email invalide." };
+  }
+  if (role === "professional" && !input.professionCategory) {
+    return { ok: false, error: "Indiquez la catégorie du professionnel invité." };
   }
 
   try {
@@ -34,7 +39,14 @@ export async function createInvite(input: {
 
     const { data: invite, error } = await admin
       .from("invitations")
-      .insert({ family_id: input.familyId, email, role, invited_by: userId })
+      .insert({
+        family_id: input.familyId,
+        email,
+        role,
+        invited_by: userId,
+        profession_category: role === "professional" ? input.professionCategory : null,
+        profession_detail: role === "professional" ? (input.professionDetail?.trim() || null) : null,
+      })
       .select("token")
       .single();
 

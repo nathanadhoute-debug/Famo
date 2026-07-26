@@ -17,7 +17,7 @@ export async function addVital(input: {
     return { ok: false, error: "Indiquez un intitulé et une valeur." };
   }
   try {
-    const { userId } = await requireMembership(input.familyId);
+    const { userId } = await requireMembership(input.familyId, { allowProfessional: true });
     const admin = createAdminClient();
     const { error } = await admin.from("vitals").insert({
       family_id: input.familyId,
@@ -54,6 +54,8 @@ export async function deleteVital(vitalId: string): Promise<ActionResult> {
   }
 }
 
+const PRESCRIBING_CATEGORIES = ["medecin_traitant", "chirurgien"];
+
 /** Ajoute un médicament, avec ses horaires de prise éventuels. */
 export async function addMedication(input: {
   familyId: string;
@@ -70,7 +72,11 @@ export async function addMedication(input: {
     return { ok: false, error: "Indiquez un nom et une dose." };
   }
   try {
-    await requireMembership(input.familyId);
+    const { userId, role, professionCategory } = await requireMembership(input.familyId, { allowProfessional: true });
+    if (role === "professional" && !PRESCRIBING_CATEGORIES.includes(professionCategory ?? "")) {
+      return { ok: false, error: "Seuls le médecin traitant et le chirurgien peuvent modifier le traitement." };
+    }
+    const isProfessional = role === "professional";
     const admin = createAdminClient();
     const { data: med, error } = await admin
       .from("medications")
@@ -83,6 +89,8 @@ export async function addMedication(input: {
         critical:      input.critical ?? false,
         rx_label:      input.rxLabel?.trim() || null,
         rx_expires_at: input.rxExpiresAt || null,
+        modified_by:   isProfessional ? userId : null,
+        modified_at:   isProfessional ? new Date().toISOString() : null,
       })
       .select("id")
       .single();
@@ -110,8 +118,15 @@ export async function deactivateMedication(medicationId: string): Promise<Action
     const admin = createAdminClient();
     const { data: med } = await admin.from("medications").select("family_id").eq("id", medicationId).maybeSingle();
     if (!med) return { ok: false, error: "Médicament introuvable." };
-    await requireMembership(med.family_id);
-    const { error } = await admin.from("medications").update({ active: false }).eq("id", medicationId);
+    const { userId, role, professionCategory } = await requireMembership(med.family_id, { allowProfessional: true });
+    if (role === "professional" && !PRESCRIBING_CATEGORIES.includes(professionCategory ?? "")) {
+      return { ok: false, error: "Seuls le médecin traitant et le chirurgien peuvent modifier le traitement." };
+    }
+    const isProfessional = role === "professional";
+    const { error } = await admin.from("medications").update({
+      active: false,
+      ...(isProfessional ? { modified_by: userId, modified_at: new Date().toISOString() } : {}),
+    }).eq("id", medicationId);
     if (error) return { ok: false, error: error.message };
     revalidatePath("/dashboard/sante");
     revalidatePath("/dashboard");
@@ -127,7 +142,7 @@ export async function toggleDose(doseId: string, given: boolean): Promise<Action
     const admin = createAdminClient();
     const { data: dose } = await admin.from("doses").select("family_id").eq("id", doseId).maybeSingle();
     if (!dose) return { ok: false, error: "Prise introuvable." };
-    const { userId } = await requireMembership(dose.family_id);
+    const { userId } = await requireMembership(dose.family_id, { allowProfessional: true });
     const { error } = await admin.from("doses").update({
       given,
       given_by: given ? userId : null,
