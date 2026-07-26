@@ -81,7 +81,7 @@ export default function ConfidentialitePage() {
         <h1 style={{ fontFamily: font.display, fontSize: 34, color: c.sage900, margin: "8px 0 6px", fontWeight: 500 }}>
           Politique de confidentialité
         </h1>
-        <p style={{ fontSize: 14, color: c.sub, margin: "0 0 8px" }}>Dernière mise à jour : 13 juillet 2026</p>
+        <p style={{ fontSize: 14, color: c.sub, margin: "0 0 8px" }}>Dernière mise à jour : 26 juillet 2026</p>
 
         <H2>1. Préambule</H2>
         <P>
@@ -101,6 +101,7 @@ export default function ConfidentialitePage() {
           <><strong>Responsable du traitement</strong> : la personne qui détermine les finalités et les moyens du traitement.</>,
           <><strong>Sous-traitant</strong> : la personne qui traite des données personnelles pour le compte du responsable du traitement.</>,
           <><strong>Cercle familial</strong> : le groupe d&apos;utilisateurs constitué autour d&apos;un même proche accompagné, disposant d&apos;un accès partagé aux données le concernant.</>,
+          <><strong>Professionnel de santé invité</strong> : intervenant extérieur au cercle familial (aide-soignant, infirmier, kinésithérapeute, médecin traitant, chirurgien, ou autre profession de santé) invité nommément par un administrateur du cercle, disposant d&apos;un accès restreint tel que décrit à la section 6.2.</>,
         ]} />
 
         <H2>3. Responsable du traitement</H2>
@@ -151,7 +152,11 @@ export default function ConfidentialitePage() {
         <H3>4.4 Données de coordination familiale</H3>
         <P>
           Planning des visites (dates, personne assignée, notes), historique des invitations envoyées et acceptées
-          au sein d&apos;un cercle, rôle de chaque membre (administrateur, membre, lecture seule).
+          au sein d&apos;un cercle, rôle de chaque membre (administrateur, membre, lecture seule, ou professionnel de
+          santé invité — voir section 6.2). Pour un professionnel de santé invité, la catégorie professionnelle
+          déclarée par l&apos;administrateur qui l&apos;invite (aide-soignant, infirmier, kinésithérapeute, médecin
+          traitant, chirurgien, ou autre) est également enregistrée, ainsi que l&apos;identité de l&apos;auteur et la
+          date de toute modification qu&apos;il apporte au traitement médicamenteux du proche accompagné.
         </P>
         <H3>4.5 Données techniques et de connexion</H3>
         <P>
@@ -189,7 +194,26 @@ export default function ConfidentialitePage() {
           cercles distincts est garantie par des mécanismes techniques au niveau de la base de données (politiques
           de sécurité au niveau ligne), empêchant tout accès croisé entre familles.
         </P>
-        <H3>6.2 Sous-traitants techniques</H3>
+        <H3>6.2 Professionnels de santé invités</H3>
+        <P>
+          Un administrateur de cercle peut inviter nommément un professionnel de santé (aide-soignant, infirmier,
+          kinésithérapeute, médecin traitant, chirurgien, ou autre profession déclarée) afin de faciliter le suivi
+          du proche accompagné. Le Service n&apos;initie jamais lui-même cette mise en relation : elle résulte
+          exclusivement d&apos;une invitation explicite de la famille, à une adresse email qu&apos;elle choisit.
+        </P>
+        <P>
+          L&apos;accès d&apos;un professionnel de santé invité est volontairement restreint : constantes de santé,
+          traitement médicamenteux (avec possibilité de confirmer une prise), ses propres notes de journal
+          (à l&apos;exclusion de celles rédigées par les membres de la famille), et les documents à caractère
+          médical (ordonnances, analyses, comptes-rendus, à l&apos;exclusion des documents personnels tels que
+          pièces d&apos;identité ou attestations d&apos;assurance). Il n&apos;a pas accès au planning des visites
+          familiales, à la liste des membres du cercle, ni à l&apos;administration du cercle. Seules les catégories
+          médecin traitant et chirurgien peuvent modifier le traitement médicamenteux ou ajouter une ordonnance ;
+          les autres catégories professionnelles disposent d&apos;un accès en consultation et peuvent confirmer
+          qu&apos;une prise a été administrée. Toute modification du traitement par un professionnel de santé est
+          horodatée et associée à son identité.
+        </P>
+        <H3>6.3 Sous-traitants techniques</H3>
         <Table
           head={["Catégorie de destinataire", "Rôle", "Localisation"]}
           rows={[
@@ -205,7 +229,7 @@ export default function ConfidentialitePage() {
           précise et à jour des sous-traitants et de leurs coordonnées peut être communiquée sur simple demande
           à contact@famo.health.
         </P>
-        <H3>6.3 Absence de sous-traitance en cascade non maîtrisée</H3>
+        <H3>6.4 Absence de sous-traitance en cascade non maîtrisée</H3>
         <P>
           Le Service ne fait appel à aucun sous-traitant additionnel autre que ceux listés ci-dessus pour le
           traitement direct des données personnelles des utilisateurs. Toute évolution de cette liste fera

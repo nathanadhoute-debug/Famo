@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentFamily } from "@/lib/family";
+import { getCurrentFamily, getFamilyMembers } from "@/lib/family";
 import { PageHead, Eyebrow, Hairline } from "@/components/dashboard/editorial";
 import { VitalsManager } from "@/components/dashboard/VitalsManager";
 import { MedicationsManager } from "@/components/dashboard/MedicationsManager";
@@ -15,7 +15,7 @@ export default async function SantePage() {
 
   const parentId = ctx.parent?.id ?? "";
 
-  const [{ data: vitals }, { data: meds }, { data: doses }] = await Promise.all([
+  const [{ data: vitals }, { data: meds }, { data: doses }, members] = await Promise.all([
     supabase
       .from("vitals")
       .select("id, label, value, unit, icon, recorded_at")
@@ -24,7 +24,7 @@ export default async function SantePage() {
       .order("recorded_at", { ascending: false }),
     supabase
       .from("medications")
-      .select("id, name, dose, category, critical, rx_label, rx_expires_at")
+      .select("id, name, dose, category, critical, rx_label, rx_expires_at, modified_by, modified_at")
       .eq("family_id", ctx.family.id)
       .eq("parent_id", parentId)
       .eq("active", true)
@@ -35,6 +35,7 @@ export default async function SantePage() {
       .eq("family_id", ctx.family.id)
       .eq("parent_id", parentId)
       .order("scheduled_time", { ascending: true }),
+    getFamilyMembers(ctx.family.id),
   ]);
 
   // Pas d'embed PostgREST medications->medication_schedules : le fichier de
@@ -43,10 +44,16 @@ export default async function SantePage() {
   const { data: schedules } = meds && meds.length > 0
     ? await supabase.from("medication_schedules").select("id, medication_id, scheduled_time").in("medication_id", meds.map((m) => m.id))
     : { data: [] };
-  const medications = (meds ?? []).map((m) => ({
-    ...m,
-    medication_schedules: (schedules ?? []).filter((s) => s.medication_id === m.id).map((s) => ({ id: s.id, scheduled_time: s.scheduled_time })),
-  }));
+  const membersById = new Map(members.map((m) => [m.userId, m]));
+  const medications = (meds ?? []).map((m) => {
+    const modifier = m.modified_by ? membersById.get(m.modified_by) : null;
+    return {
+      ...m,
+      medication_schedules: (schedules ?? []).filter((s) => s.medication_id === m.id).map((s) => ({ id: s.id, scheduled_time: s.scheduled_time })),
+      modifiedByName: modifier?.name ?? null,
+      modifiedByCategory: modifier?.professionCategory ?? null,
+    };
+  });
 
   return (
     <div style={{ maxWidth: 820, margin: "0 auto", padding: "clamp(20px,3vw,34px) clamp(16px,4vw,36px) 48px" }}>

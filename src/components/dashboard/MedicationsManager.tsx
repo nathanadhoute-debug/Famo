@@ -17,6 +17,9 @@ type Medication = {
   rx_label: string | null;
   rx_expires_at: string | null;
   medication_schedules: { id: string; scheduled_time: string }[];
+  modified_at?: string | null;
+  modifiedByName?: string | null;
+  modifiedByCategory?: string | null;
 };
 
 const emptyForm = { name: "", dose: "", category: "Autre", critical: false, rxLabel: "", rxExpiresAt: "", times: "" };
@@ -96,6 +99,13 @@ export function MedicationsManager({ initial, familyId, parentId, role, professi
                   {m.medication_schedules.length > 0 && ` · ${m.medication_schedules.map((s) => s.scheduled_time.slice(0, 5)).join(", ")}`}
                   {m.rx_expires_at && ` · Ordonnance jusqu'au ${new Date(m.rx_expires_at).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}`}
                 </p>
+                {m.modifiedByName && (
+                  <p style={{ fontSize: 11.5, color: c.sage700, margin: "3px 0 0", fontStyle: "italic" }}>
+                    Modifié par {m.modifiedByName}
+                    {m.modifiedByCategory && ` (${PROFESSION_LABEL[m.modifiedByCategory] ?? m.modifiedByCategory})`}
+                    {m.modified_at && ` · ${new Date(m.modified_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}`}
+                  </p>
+                )}
               </div>
               {canManageMeds && (
                 <button onClick={() => deactivate(m.id)} disabled={pending} aria-label="Désactiver"
