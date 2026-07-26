@@ -17,6 +17,7 @@ type Doc = {
 };
 
 const CATEGORIES = ["Ordonnance", "Analyse", "Compte-rendu", "Identité", "Assurance", "Autre"];
+const PROFESSIONAL_CATEGORIES = ["Ordonnance", "Analyse", "Compte-rendu"];
 const CAT_COLOR: Record<string, string> = {
   Ordonnance: c.sage700, Analyse: c.terracotta, "Compte-rendu": "#6B8E9E",
   Identité: "#8E6B9E", Assurance: c.amber, Autre: c.eyebrow,
@@ -36,16 +37,18 @@ function kind(mime: string | null) {
   return "Fichier";
 }
 
-export function DocumentsManager({ initial, familyId, parentId }: {
+export function DocumentsManager({ initial, familyId, parentId, role }: {
   initial: Doc[];
   familyId: string;
   parentId: string | null;
+  role?: string;
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
+  const categories = role === "professional" ? PROFESSIONAL_CATEGORIES : CATEGORIES;
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState("");
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState(categories[0]);
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
@@ -111,7 +114,7 @@ export function DocumentsManager({ initial, familyId, parentId }: {
             <div>
               <label className="field-label">Catégorie</label>
               <select className="select" value={category} onChange={(e) => setCategory(e.target.value)}>
-                {CATEGORIES.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+                {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
           </div>

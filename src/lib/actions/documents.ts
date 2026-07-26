@@ -7,6 +7,10 @@ import type { ActionResult } from "@/lib/actions/types";
 const BUCKET = "documents";
 const MAX_SIZE = 15 * 1024 * 1024; // 15 Mo
 
+// Un professionnel n'a aucune visibilité sur les catégories personnelles
+// (identité, assurance...) — seulement les pièces à caractère médical.
+const PROFESSIONAL_CATEGORIES = ["Ordonnance", "Analyse", "Compte-rendu"];
+
 /** Téléverse un document dans le coffre-fort (storage + table documents). */
 export async function uploadDocument(formData: FormData): Promise<ActionResult> {
   const familyId = String(formData.get("familyId") ?? "");
@@ -20,7 +24,10 @@ export async function uploadDocument(formData: FormData): Promise<ActionResult> 
   if (file.size > MAX_SIZE) return { ok: false, error: "Fichier trop volumineux (max 15 Mo)." };
 
   try {
-    const { userId } = await requireMembership(familyId, { allowProfessional: true });
+    const { userId, role } = await requireMembership(familyId, { allowProfessional: true });
+    if (role === "professional" && !PROFESSIONAL_CATEGORIES.includes(category)) {
+      return { ok: false, error: "Catégorie non autorisée pour un professionnel." };
+    }
     const admin = createAdminClient();
 
     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
@@ -59,9 +66,12 @@ export async function getDocumentUrl(documentId: string): Promise<{ ok: true; ur
   try {
     const admin = createAdminClient();
     const { data: doc } = await admin
-      .from("documents").select("family_id, file_url").eq("id", documentId).maybeSingle();
+      .from("documents").select("family_id, file_url, category").eq("id", documentId).maybeSingle();
     if (!doc) return { ok: false, error: "Document introuvable." };
-    await requireMembership(doc.family_id, { allowProfessional: true });
+    const { role } = await requireMembership(doc.family_id, { allowProfessional: true });
+    if (role === "professional" && !PROFESSIONAL_CATEGORIES.includes(doc.category)) {
+      return { ok: false, error: "Document non accessible pour un professionnel." };
+    }
 
     const { data, error } = await admin.storage.from(BUCKET).createSignedUrl(doc.file_url, 60);
     if (error || !data) return { ok: false, error: error?.message ?? "Lien indisponible." };
@@ -76,9 +86,12 @@ export async function deleteDocument(documentId: string): Promise<ActionResult> 
   try {
     const admin = createAdminClient();
     const { data: doc } = await admin
-      .from("documents").select("family_id, file_url, uploaded_by").eq("id", documentId).maybeSingle();
+      .from("documents").select("family_id, file_url, uploaded_by, category").eq("id", documentId).maybeSingle();
     if (!doc) return { ok: false, error: "Document introuvable." };
     const { userId, role } = await requireMembership(doc.family_id, { allowProfessional: true });
+    if (role === "professional" && !PROFESSIONAL_CATEGORIES.includes(doc.category)) {
+      return { ok: false, error: "Document non accessible pour un professionnel." };
+    }
     if (doc.uploaded_by !== userId && role !== "admin") {
       return { ok: false, error: "Seul l'auteur ou un admin peut supprimer ce document." };
     }
