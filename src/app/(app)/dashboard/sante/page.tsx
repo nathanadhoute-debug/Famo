@@ -31,7 +31,7 @@ export default async function SantePage() {
       .order("created_at", { ascending: true }),
     supabase
       .from("today_doses")
-      .select("id, med_name, med_dose, scheduled_time, given, is_overdue, critical, given_by_name")
+      .select("id, med_name, med_dose, scheduled_time, given, is_overdue, critical, given_by_name, given_at")
       .eq("family_id", ctx.family.id)
       .eq("parent_id", parentId)
       .order("scheduled_time", { ascending: true }),
