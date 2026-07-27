@@ -73,6 +73,12 @@ export default async function DashboardHome() {
   // Un professionnel invité voit une vue centrée sur le proche, sans les
   // éléments sociaux familiaux (relais, avatars des membres, réglages).
   if (ctx.role === "professional") {
+    // Ses propres passages à venir uniquement (jamais le planning familial complet).
+    const { data: myVisits } = await supabase.from("visits")
+      .select("id, visit_date, note")
+      .eq("family_id", ctx.family.id).eq("parent_id", parentId).eq("visitor_id", ctx.user.id)
+      .gte("visit_date", now.toISOString())
+      .order("visit_date", { ascending: true });
     return (
       <ProfessionalHome
         parent={ctx.parent}
@@ -86,6 +92,9 @@ export default async function DashboardHome() {
           authorName: nameById(lastEntry.author_id) ?? "Membre",
           created_at: lastEntry.created_at,
         } : null}
+        professionCategory={ctx.professionCategory}
+        familyId={ctx.family.id}
+        myVisits={myVisits ?? []}
       />
     );
   }

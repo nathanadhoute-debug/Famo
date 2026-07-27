@@ -2,9 +2,12 @@ import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline, Sparkline } from "@/components/dashboard/editorial";
 import { ParentSwitcher } from "@/components/dashboard/ParentSwitcher";
+import { ProfessionalVisitScheduler } from "@/components/dashboard/ProfessionalVisitScheduler";
 import { timeAgo, parseNumeric } from "@/lib/format";
 import { c, font } from "@/lib/theme";
 import type { ParentLite } from "@/lib/family";
+
+const HOME_VISITING_CATEGORIES = ["aide_soignant", "infirmier", "kine", "autre"];
 
 /**
  * Accueil d'un professionnel de santé invité dans le cercle : vue centrée
@@ -15,6 +18,7 @@ import type { ParentLite } from "@/lib/family";
 export function ProfessionalHome({
   parent, parents, activeParentId,
   overdueDoses, latestVital, vitalHistory, lastEntry,
+  professionCategory, familyId, myVisits,
 }: {
   parent: ParentLite | null;
   parents: ParentLite[];
@@ -23,7 +27,11 @@ export function ProfessionalHome({
   latestVital: { label: string; value: string; unit: string | null; recorded_at: string } | null;
   vitalHistory: number[];
   lastEntry: { content: string; authorName: string; created_at: string } | null;
+  professionCategory: string | null;
+  familyId: string;
+  myVisits: { id: string; visit_date: string; note: string | null }[];
 }) {
+  const canScheduleVisit = HOME_VISITING_CATEGORIES.includes(professionCategory ?? "");
   return (
     <div style={{ maxWidth: 860, margin: "0 auto", padding: "clamp(20px,3vw,34px) clamp(16px,4vw,36px) 48px" }}>
       <section style={{ position: "relative", background: c.sage900, borderRadius: 20, padding: "clamp(28px,4vw,42px)", overflow: "hidden", marginBottom: 40 }}>
@@ -111,6 +119,13 @@ export function ProfessionalHome({
           Ajouter une note <Icon name="arrow-right" size={14} />
         </Link>
       </section>
+
+      {canScheduleVisit && (
+        <>
+          <Hairline margin="30px 0" />
+          <ProfessionalVisitScheduler initial={myVisits} familyId={familyId} parentId={parent?.id ?? null} />
+        </>
+      )}
     </div>
   );
 }

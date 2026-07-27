@@ -54,6 +54,30 @@ export async function GET(req: Request) {
         </div>`,
     });
     remindersSent += emails.length ? 1 : 0;
+
+    // Rappel dédié si le passage est celui d'un professionnel de santé qui
+    // s'est programmé lui-même (aide-soignant/infirmier/kiné/autre) — toujours
+    // envoyé, indépendamment de notify_visit_reminder (réservé à la famille).
+    const { data: membership } = await admin
+      .from("family_members").select("role").eq("family_id", visit.family_id).eq("user_id", visit.visitor_id!).maybeSingle();
+    if (membership?.role === "professional") {
+      const { data: proUser } = await admin.from("auth_users").select("email").eq("id", visit.visitor_id!).maybeSingle();
+      if (proUser?.email) {
+        const visitTime = new Date(visit.visit_date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" });
+        await sendCronEmail({
+          to: [proUser.email],
+          subject: `Rappel : votre passage prévu demain auprès de ${parentName}`,
+          html: `
+            <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#1A2622;">
+              <h1 style="font-size:22px;color:#1E3830;margin-bottom:8px;">Rappel de passage</h1>
+              <p style="color:#555;line-height:1.6;">
+                Vous êtes prévu·e demain à <strong>${visitTime}</strong> auprès de <strong>${parentName}</strong>.
+              </p>
+            </div>`,
+        });
+        remindersSent += 1;
+      }
+    }
   }
 
   return NextResponse.json({ ok: true, cron: "visit-reminder", remindersSent, ts: new Date().toISOString() });
