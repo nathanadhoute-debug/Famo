@@ -18,7 +18,7 @@ export default async function SantePage() {
   const [{ data: vitals }, { data: meds }, { data: doses }, members] = await Promise.all([
     supabase
       .from("vitals")
-      .select("id, label, value, unit, icon, recorded_at")
+      .select("id, label, value, unit, icon, recorded_at, recorded_by")
       .eq("family_id", ctx.family.id)
       .eq("parent_id", parentId)
       .order("recorded_at", { ascending: false }),
@@ -45,6 +45,10 @@ export default async function SantePage() {
     ? await supabase.from("medication_schedules").select("id, medication_id, scheduled_time").in("medication_id", meds.map((m) => m.id))
     : { data: [] };
   const membersById = new Map(members.map((m) => [m.userId, m]));
+  const vitalsWithAuthor = (vitals ?? []).map((v) => ({
+    ...v,
+    recordedByName: v.recorded_by ? (membersById.get(v.recorded_by)?.name ?? "Membre") : null,
+  }));
   const medications = (meds ?? []).map((m) => {
     const modifier = m.modified_by ? membersById.get(m.modified_by) : null;
     return {
@@ -79,7 +83,7 @@ export default async function SantePage() {
 
       <Eyebrow>Mesures</Eyebrow>
       <div style={{ marginTop: 14 }}>
-        <VitalsManager initial={vitals ?? []} familyId={ctx.family.id} parentId={ctx.parent?.id ?? null} />
+        <VitalsManager initial={vitalsWithAuthor} familyId={ctx.family.id} parentId={ctx.parent?.id ?? null} />
       </div>
     </div>
   );

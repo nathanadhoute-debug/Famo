@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentFamily } from "@/lib/family";
+import { getCurrentFamily, getFamilyMembers } from "@/lib/family";
 import { PageHead } from "@/components/dashboard/editorial";
 import { DocumentsManager } from "@/components/dashboard/DocumentsManager";
 
@@ -20,7 +20,15 @@ export default async function DocumentsPage() {
     .eq("family_id", ctx.family.id)
     .eq("parent_id", ctx.parent?.id ?? "");
   if (isProfessional) docsQuery = docsQuery.in("category", ["Ordonnance", "Analyse", "Compte-rendu"]);
-  const { data: docs } = await docsQuery.order("created_at", { ascending: false });
+  const [{ data: docs }, members] = await Promise.all([
+    docsQuery.order("created_at", { ascending: false }),
+    getFamilyMembers(ctx.family.id),
+  ]);
+  const namesById = new Map(members.map((m) => [m.userId, m.name]));
+  const docsWithAuthor = (docs ?? []).map((d) => ({
+    ...d,
+    uploadedByName: d.uploaded_by ? (namesById.get(d.uploaded_by) ?? "Membre") : null,
+  }));
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "clamp(20px,3vw,34px) clamp(16px,4vw,36px) 48px" }}>
@@ -29,7 +37,7 @@ export default async function DocumentsPage() {
         title="Le coffre-fort du cercle"
         subtitle="Ordonnances, analyses, papiers importants"
       />
-      <DocumentsManager initial={docs ?? []} familyId={ctx.family.id} parentId={ctx.parent?.id ?? null} role={ctx.role} professionCategory={ctx.professionCategory} />
+      <DocumentsManager initial={docsWithAuthor} familyId={ctx.family.id} parentId={ctx.parent?.id ?? null} role={ctx.role} professionCategory={ctx.professionCategory} />
     </div>
   );
 }

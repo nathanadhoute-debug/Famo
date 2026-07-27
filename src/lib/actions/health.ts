@@ -76,7 +76,6 @@ export async function addMedication(input: {
     if (role === "professional" && !PRESCRIBING_CATEGORIES.includes(professionCategory ?? "")) {
       return { ok: false, error: "Seuls le médecin traitant et le chirurgien peuvent modifier le traitement." };
     }
-    const isProfessional = role === "professional";
     const admin = createAdminClient();
     const { data: med, error } = await admin
       .from("medications")
@@ -89,8 +88,8 @@ export async function addMedication(input: {
         critical:      input.critical ?? false,
         rx_label:      input.rxLabel?.trim() || null,
         rx_expires_at: input.rxExpiresAt || null,
-        modified_by:   isProfessional ? userId : null,
-        modified_at:   isProfessional ? new Date().toISOString() : null,
+        modified_by:   userId,
+        modified_at:   new Date().toISOString(),
       })
       .select("id")
       .single();
@@ -122,10 +121,10 @@ export async function deactivateMedication(medicationId: string): Promise<Action
     if (role === "professional" && !PRESCRIBING_CATEGORIES.includes(professionCategory ?? "")) {
       return { ok: false, error: "Seuls le médecin traitant et le chirurgien peuvent modifier le traitement." };
     }
-    const isProfessional = role === "professional";
     const { error } = await admin.from("medications").update({
       active: false,
-      ...(isProfessional ? { modified_by: userId, modified_at: new Date().toISOString() } : {}),
+      modified_by: userId,
+      modified_at: new Date().toISOString(),
     }).eq("id", medicationId);
     if (error) return { ok: false, error: error.message };
     revalidatePath("/dashboard/sante");
