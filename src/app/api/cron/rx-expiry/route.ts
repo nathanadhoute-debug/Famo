@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getFamilyEmails, sendCronEmail } from "@/lib/cron-mail";
+import { sendCronEmail } from "@/lib/cron-mail";
 
 function isAuthorized(req: Request) {
   return req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
@@ -47,20 +47,52 @@ export async function GET(req: Request) {
 
   let emailsSent = 0;
   for (const [familyId, items] of byFamily) {
-    const emails = await getFamilyEmails(admin, familyId, "notify_rx_expiry");
     const rows = items.map((i) => `<li><strong>${i.medName}</strong>${i.rxLabel ? ` (${i.rxLabel})` : ""} — ${i.parentName}</li>`).join("");
-    await sendCronEmail({
-      to: emails,
-      subject: "Une ordonnance arrive à expiration dans 30 jours",
-      html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#1A2622;">
-          <h1 style="font-size:22px;color:#1E3830;margin-bottom:8px;">Ordonnance à renouveler</h1>
-          <p style="color:#555;line-height:1.6;">L'ordonnance des médicaments suivants arrive à expiration dans 30 jours :</p>
-          <ul style="color:#333;line-height:1.8;">${rows}</ul>
-          <p style="color:#555;line-height:1.6;">Pensez à prendre rendez-vous pour la renouveler à temps.</p>
-        </div>`,
-    });
-    emailsSent += emails.length ? 1 : 0;
+
+    // Séparation famille / médecin traitant-chirurgien : ces derniers reçoivent
+    // un message personnalisé les invitant à renouveler l'ordonnance eux-mêmes,
+    // pas le rappel générique "prenez rendez-vous" adressé à la famille.
+    const { data: recipients } = await admin
+      .from("family_members")
+      .select("user_id, role")
+      .eq("family_id", familyId)
+      .eq("notify_rx_expiry", true);
+    const familyIds = (recipients ?? []).filter((r) => r.role !== "professional").map((r) => r.user_id);
+    const prescriberIds = (recipients ?? []).filter((r) => r.role === "professional").map((r) => r.user_id);
+
+    if (familyIds.length > 0) {
+      const { data: users } = await admin.from("auth_users").select("email").in("id", familyIds);
+      const emails = (users ?? []).map((u) => u.email).filter((e): e is string => !!e);
+      await sendCronEmail({
+        to: emails,
+        subject: "Une ordonnance arrive à expiration dans 30 jours",
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#1A2622;">
+            <h1 style="font-size:22px;color:#1E3830;margin-bottom:8px;">Ordonnance à renouveler</h1>
+            <p style="color:#555;line-height:1.6;">L'ordonnance des médicaments suivants arrive à expiration dans 30 jours :</p>
+            <ul style="color:#333;line-height:1.8;">${rows}</ul>
+            <p style="color:#555;line-height:1.6;">Pensez à prendre rendez-vous pour la renouveler à temps.</p>
+          </div>`,
+      });
+      emailsSent += emails.length ? 1 : 0;
+    }
+
+    if (prescriberIds.length > 0) {
+      const { data: users } = await admin.from("auth_users").select("email").in("id", prescriberIds);
+      const emails = (users ?? []).map((u) => u.email).filter((e): e is string => !!e);
+      const parentNames = [...new Set(items.map((i) => i.parentName))].join(" et ");
+      await sendCronEmail({
+        to: emails,
+        subject: `Ordonnance à renouveler pour ${parentNames}`,
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#1A2622;">
+            <h1 style="font-size:22px;color:#1E3830;margin-bottom:8px;">Ordonnance à renouveler</h1>
+            <p style="color:#555;line-height:1.6;">Veuillez songer à mettre à jour l'ordonnance de <strong>${parentNames}</strong> concernant :</p>
+            <ul style="color:#333;line-height:1.8;">${rows}</ul>
+          </div>`,
+      });
+      emailsSent += emails.length ? 1 : 0;
+    }
   }
 
   return NextResponse.json({ ok: true, cron: "rx-expiry", familiesAlerted: emailsSent, ts: new Date().toISOString() });
