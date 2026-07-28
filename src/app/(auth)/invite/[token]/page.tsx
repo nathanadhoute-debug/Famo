@@ -28,10 +28,23 @@ export default function InvitePage() {
   };
 
   useEffect(() => {
+    // Juste après l'échange du code de confirmation email (route /auth/confirm),
+    // le client Supabase peut mettre un instant à synchroniser la session côté
+    // navigateur — sans filet, ça reste bloqué indéfiniment sur "Un instant…".
+    // Si rien ne s'est passé après 4s, on bascule vers l'écran de connexion :
+    // au pire l'utilisateur retape son mot de passe, ce qui marche à coup sûr.
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (!settled) { settled = true; setStatus("auth"); }
+    }, 4000);
     supabase.auth.getUser().then(({ data: { user } }) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       if (user) accept();
       else setStatus("auth");
     });
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

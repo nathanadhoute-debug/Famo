@@ -18,6 +18,7 @@ export async function createInvite(input: {
   role?: MemberRole;
   professionCategory?: ProfessionCategory;
   professionDetail?: string;
+  authorizedParentIds?: string[];
 }): Promise<InviteResult> {
   const email = input.email.trim().toLowerCase();
   const role = input.role ?? "member";
@@ -27,6 +28,12 @@ export async function createInvite(input: {
   }
   if (role === "professional" && !input.professionCategory) {
     return { ok: false, error: "Indiquez la catégorie du professionnel invité." };
+  }
+  // Un professionnel n'accède qu'aux proches explicitement choisis par
+  // l'admin qui l'invite — évite qu'un professionnel suivant un seul proche
+  // d'un cercle multi-proches voie les données des autres.
+  if (role === "professional" && !input.authorizedParentIds?.length) {
+    return { ok: false, error: "Indiquez au moins un proche que ce professionnel peut suivre." };
   }
 
   try {
@@ -46,6 +53,7 @@ export async function createInvite(input: {
         invited_by: userId,
         profession_category: role === "professional" ? input.professionCategory : null,
         profession_detail: role === "professional" ? (input.professionDetail?.trim() || null) : null,
+        authorized_parent_ids: role === "professional" ? input.authorizedParentIds : null,
       })
       .select("token")
       .single();

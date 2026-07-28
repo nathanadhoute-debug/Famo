@@ -43,7 +43,7 @@ export function SettingsManager({
       <Hairline margin="28px 0" />
       <ParentsSection familyId={family.id} isAdmin={isAdmin} parents={parents} />
       <Hairline margin="28px 0" />
-      <MembersSection family={family} isAdmin={isAdmin} members={members} pendingInvites={pendingInvites} currentUserId={currentUserId} />
+      <MembersSection family={family} isAdmin={isAdmin} members={members} pendingInvites={pendingInvites} currentUserId={currentUserId} parents={parents} />
       <Hairline margin="28px 0" />
       <NotificationsSection familyId={family.id} initial={notificationPrefs} />
       <Hairline margin="28px 0" />
@@ -236,27 +236,32 @@ function ParentsSection({ familyId, isAdmin, parents }: { familyId: string; isAd
   );
 }
 
-function MembersSection({ family, isAdmin, members, pendingInvites, currentUserId }: {
+function MembersSection({ family, isAdmin, members, pendingInvites, currentUserId, parents }: {
   family: { id: string; name: string };
   isAdmin: boolean;
   members: Member[];
   pendingInvites: Invite[];
   currentUserId: string;
+  parents: Parent[];
 }) {
   const router = useRouter();
   const [email, setEmail] = useState(""); const [role, setRole] = useState("member");
   const [professionCategory, setProfessionCategory] = useState("");
   const [professionDetail, setProfessionDetail] = useState("");
+  const [authorizedParentIds, setAuthorizedParentIds] = useState<string[]>([]);
   const [err, setErr] = useState("");
   const [result, setResult] = useState<{ email: string; link: string; emailSent: boolean; emailError?: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [pending, start] = useTransition();
 
   const isProfessional = role === "professional";
+  const toggleParent = (id: string) =>
+    setAuthorizedParentIds((ids) => ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]);
 
   const invite = () => {
     if (!email.trim()) return;
     if (isProfessional && !professionCategory) { setErr("Indiquez la catégorie du professionnel."); return; }
+    if (isProfessional && authorizedParentIds.length === 0) { setErr("Choisissez au moins un proche que ce professionnel peut suivre."); return; }
     setErr(""); setResult(null); setCopied(false);
     const target = email.trim();
     start(async () => {
@@ -264,11 +269,11 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
         familyId: family.id,
         email: target,
         role: role as any,
-        ...(isProfessional ? { professionCategory: professionCategory as any, professionDetail: professionDetail || undefined } : {}),
+        ...(isProfessional ? { professionCategory: professionCategory as any, professionDetail: professionDetail || undefined, authorizedParentIds } : {}),
       });
       if (!r.ok) return setErr(r.error);
       setResult({ email: target, link: `${location.origin}/invite/${r.token}`, emailSent: r.emailSent, emailError: r.emailError });
-      setEmail(""); setProfessionCategory(""); setProfessionDetail(""); router.refresh();
+      setEmail(""); setProfessionCategory(""); setProfessionDetail(""); setAuthorizedParentIds([]); router.refresh();
     });
   };
 
@@ -360,6 +365,19 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
                   onChange={(e) => setProfessionDetail(e.target.value)} />
               )}
               <button className="btn btn-primary" onClick={invite} disabled={pending} style={{ borderRadius: 9 }}>{pending ? "…" : "Inviter"}</button>
+            </div>
+          )}
+          {isProfessional && parents.length > 0 && (
+            <div style={{ marginTop: 10 }}>
+              <p style={{ fontSize: 12.5, color: c.sub, marginBottom: 6 }}>Proche(s) que ce professionnel peut suivre :</p>
+              <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+                {parents.map((p) => (
+                  <label key={p.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13.5, color: c.sage900, cursor: "pointer" }}>
+                    <input type="checkbox" checked={authorizedParentIds.includes(p.id)} onChange={() => toggleParent(p.id)} />
+                    {p.name}
+                  </label>
+                ))}
+              </div>
             </div>
           )}
           {isProfessional && (

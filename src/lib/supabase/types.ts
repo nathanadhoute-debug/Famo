@@ -53,6 +53,7 @@ export type Database = {
           notify_overdue_doses:   boolean
           profession_category:    'aide_soignant' | 'infirmier' | 'kine' | 'medecin_traitant' | 'chirurgien' | 'autre' | null
           profession_detail:      string | null
+          authorized_parent_ids:  string[] | null
         }
         Insert: {
           id?:                     string
@@ -65,6 +66,7 @@ export type Database = {
           notify_overdue_doses?:   boolean
           profession_category?:    'aide_soignant' | 'infirmier' | 'kine' | 'medecin_traitant' | 'chirurgien' | 'autre' | null
           profession_detail?:      string | null
+          authorized_parent_ids?:  string[] | null
         }
         Update: {
           role?:                   'admin' | 'member' | 'readonly' | 'professional'
@@ -73,6 +75,7 @@ export type Database = {
           notify_overdue_doses?:   boolean
           profession_category?:    'aide_soignant' | 'infirmier' | 'kine' | 'medecin_traitant' | 'chirurgien' | 'autre' | null
           profession_detail?:      string | null
+          authorized_parent_ids?:  string[] | null
         }
         Relationships: []
       }
@@ -109,6 +112,7 @@ export type Database = {
           created_at:  string
           profession_category: 'aide_soignant' | 'infirmier' | 'kine' | 'medecin_traitant' | 'chirurgien' | 'autre' | null
           profession_detail:   string | null
+          authorized_parent_ids: string[] | null
         }
         Insert: {
           id?:          string
@@ -122,6 +126,7 @@ export type Database = {
           created_at?:  string
           profession_category?: 'aide_soignant' | 'infirmier' | 'kine' | 'medecin_traitant' | 'chirurgien' | 'autre' | null
           profession_detail?:   string | null
+          authorized_parent_ids?: string[] | null
         }
         Update: {
           accepted_at?: string | null

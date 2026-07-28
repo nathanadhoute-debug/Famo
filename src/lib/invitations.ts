@@ -21,7 +21,7 @@ export async function acceptInvitation(token: string): Promise<AcceptResult> {
 
   const { data: invite, error } = await admin
     .from("invitations")
-    .select("id, family_id, role, email, expires_at, accepted_at, profession_category, profession_detail")
+    .select("id, family_id, role, email, expires_at, accepted_at, profession_category, profession_detail, authorized_parent_ids")
     .eq("token", token)
     .maybeSingle();
 
@@ -51,6 +51,7 @@ export async function acceptInvitation(token: string): Promise<AcceptResult> {
       role: invite.role,
       profession_category: isProfessional ? invite.profession_category : null,
       profession_detail: isProfessional ? invite.profession_detail : null,
+      authorized_parent_ids: isProfessional ? invite.authorized_parent_ids : null,
       ...(isProfessional
         ? { notify_rx_expiry: isPrescribing, notify_visit_reminder: false, notify_overdue_doses: false }
         : {}),

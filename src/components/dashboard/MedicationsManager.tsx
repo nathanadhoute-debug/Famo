@@ -103,7 +103,7 @@ export function MedicationsManager({ initial, familyId, parentId, role, professi
                   <p style={{ fontSize: 11.5, color: c.sage700, margin: "3px 0 0", fontStyle: "italic" }}>
                     Modifié par {m.modifiedByName}
                     {m.modifiedByCategory && ` (${PROFESSION_LABEL[m.modifiedByCategory] ?? m.modifiedByCategory})`}
-                    {m.modified_at && ` · ${new Date(m.modified_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" })}`}
+                    {m.modified_at && ` · ${new Date(m.modified_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}`}
                   </p>
                 )}
               </div>
