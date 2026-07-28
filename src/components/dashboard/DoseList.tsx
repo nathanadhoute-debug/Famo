@@ -69,9 +69,9 @@ export function DoseList({ initial }: { initial: Dose[] }) {
                   {d.med_name} <span style={{ color: c.muted, fontWeight: 400 }}>· {d.med_dose}</span>
                   {d.critical && <span style={{ marginLeft: 6, color: c.danger, fontSize: 12 }}>●</span>}
                 </span>
-                {d.given && d.given_by_name && (
+                {d.given && (
                   <span style={{ fontSize: 12, color: c.muted }}>
-                    Donné par {d.given_by_name}
+                    Donné par {d.given_by_name || "Membre"}
                     {d.given_at && ` à ${new Date(d.given_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}`}
                   </span>
                 )}

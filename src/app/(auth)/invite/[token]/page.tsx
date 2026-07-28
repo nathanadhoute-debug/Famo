@@ -39,6 +39,8 @@ export default function InvitePage() {
     e.preventDefault();
     setError("");
     if (mode === "signup") {
+      if (!form.name.trim()) { setError("Indiquez votre prénom et nom."); return; }
+      if (form.password.length < 8) { setError("Le mot de passe doit faire au moins 8 caractères."); return; }
       const { data, error } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
