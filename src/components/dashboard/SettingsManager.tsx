@@ -382,7 +382,7 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
           )}
           {isProfessional && (
             <p style={{ fontSize: 12.5, color: c.sub, marginTop: 8, lineHeight: 1.5 }}>
-              Accès limité : consultation des constantes et documents, ajout de constantes/documents, cocher les prises de médicaments.
+              Accès limité : consultation des constantes, médicaments et documents ; ajout de constantes et documents ; cocher les prises de médicaments.
               {" "}Peut écrire au journal mais ne voit pas les notes de la famille (seulement les siennes).
               {" "}Aucune alerte email, sauf médecin traitant/chirurgien qui reçoivent le rappel d'ordonnance à renouveler.
               {" "}Seuls le médecin traitant et le chirurgien peuvent modifier le traitement et ajouter une ordonnance.
