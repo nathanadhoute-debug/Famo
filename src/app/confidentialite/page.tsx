@@ -264,11 +264,20 @@ export default function ConfidentialitePage() {
           rows={[
             ["Données de compte actif", "Durée de vie du compte"],
             ["Données de santé et de journal", "Durée de vie du compte, ou jusqu'à suppression manuelle"],
+            ["Retrait d'un proche accompagné du cercle", "Suppression immédiate et irréversible de tout son historique"],
             ["Compte supprimé à la demande de l'utilisateur", "Suppression ou anonymisation sous 30 jours"],
             ["Invitations non acceptées", "Expiration automatique après 7 jours"],
             ["Journaux techniques de connexion", "12 mois maximum"],
           ]}
         />
+        <P>
+          Le retrait d&apos;un proche accompagné par un administrateur du cercle entraîne la suppression immédiate et
+          définitive de l&apos;ensemble des données le concernant (médicaments, visites, mesures de santé, entrées de
+          journal, documents) : cette action, irréversible, est distincte de la suppression du compte d&apos;un
+          utilisateur. À l&apos;inverse, le retrait d&apos;un membre ou d&apos;un professionnel de santé invité d&apos;un cercle ne
+          supprime que son accès à ce cercle précis : son compte et son profil demeurent intacts, notamment s&apos;il
+          reste rattaché à un autre cercle familial (voir section 6.2).
+        </P>
         <P>
           À l&apos;issue de ces durées, les données sont supprimées définitivement ou anonymisées de manière
           irréversible, sauf obligation légale de conservation plus longue s&apos;imposant au responsable du
@@ -302,6 +311,14 @@ export default function ConfidentialitePage() {
         </P>
 
         <H2>11. Vos droits</H2>
+        <P>
+          Le proche accompagné (voir section 10) est, au sens du RGPD, une <strong>personne concernée</strong> à part
+          entière par le traitement de ses données de santé, au même titre que les utilisateurs directs du Service —
+          même s&apos;il n&apos;est généralement pas lui-même titulaire d&apos;un compte. Il dispose donc des mêmes droits que
+          ceux décrits ci-dessous, qu&apos;il peut exercer personnellement, par l&apos;intermédiaire d&apos;un représentant
+          légal s&apos;il fait l&apos;objet d&apos;une mesure de protection juridique, ou par un membre du cercle familial
+          agissant en son nom et avec son accord.
+        </P>
         <P>Conformément aux articles 15 à 22 du RGPD, toute personne concernée dispose des droits suivants :</P>
         <Ul items={[
           <><strong>Droit d&apos;accès</strong> (article 15) : obtenir la confirmation qu&apos;une donnée la concernant est traitée, et en obtenir une copie ;</>,
