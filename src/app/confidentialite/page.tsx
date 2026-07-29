@@ -81,7 +81,7 @@ export default function ConfidentialitePage() {
         <h1 style={{ fontFamily: font.display, fontSize: 34, color: c.sage900, margin: "8px 0 6px", fontWeight: 500 }}>
           Politique de confidentialité
         </h1>
-        <p style={{ fontSize: 14, color: c.sub, margin: "0 0 8px" }}>Dernière mise à jour : 26 juillet 2026</p>
+        <p style={{ fontSize: 14, color: c.sub, margin: "0 0 8px" }}>Dernière mise à jour : 29 juillet 2026</p>
 
         <H2>1. Préambule</H2>
         <P>
@@ -160,9 +160,11 @@ export default function ConfidentialitePage() {
         </P>
         <H3>4.5 Données techniques et de connexion</H3>
         <P>
-          Adresse IP, horodatage des connexions, identifiant de session. Deux cookies techniques sont déposés : un
-          cookie d&apos;authentification (maintien de la session) et un cookie fonctionnel mémorisant, pour un cercle
-          suivant plusieurs proches, lequel est actuellement consulté ; aucun autre cookie n&apos;est utilisé (voir section 12).
+          Adresse IP, horodatage des connexions, identifiant de session. Trois cookies techniques sont déposés : un
+          cookie d&apos;authentification (maintien de la session), un cookie fonctionnel mémorisant, pour un cercle
+          suivant plusieurs proches, lequel est actuellement consulté, et un cookie fonctionnel équivalent mémorisant,
+          pour un compte rattaché à plusieurs cercles familiaux, lequel cercle est actuellement consulté ; aucun autre
+          cookie n&apos;est utilisé (voir section 12).
         </P>
         <H3>4.6 Minimisation des données</H3>
         <P>
@@ -212,6 +214,13 @@ export default function ConfidentialitePage() {
           les autres catégories professionnelles disposent d&apos;un accès en consultation et peuvent confirmer
           qu&apos;une prise a été administrée. Toute modification du traitement par un professionnel de santé est
           horodatée et associée à son identité.
+        </P>
+        <P>
+          Un même professionnel de santé peut être invité, avec un seul et même compte, par plusieurs cercles
+          familiaux distincts (par exemple lorsqu&apos;il suit déjà un autre proche accompagné sur le Service). Dans
+          ce cas, l&apos;isolation décrite à la section 6.1 s&apos;applique à chaque cercle indépendamment : les données
+          d&apos;un cercle ne sont jamais visibles depuis un autre. Seul le nom des cercles auxquels ce professionnel a
+          été invité lui est affiché, afin de lui permettre de naviguer entre eux.
         </P>
         <H3>6.3 Sous-traitants techniques</H3>
         <Table
@@ -325,6 +334,7 @@ export default function ConfidentialitePage() {
         <Ul items={[
           <>Un cookie de session, indispensable à l&apos;authentification.</>,
           <>Un cookie fonctionnel mémorisant, pour un cercle suivant plusieurs proches, lequel est actuellement consulté — pour éviter d&apos;avoir à le resélectionner à chaque page.</>,
+          <>Un cookie fonctionnel équivalent mémorisant, pour un compte rattaché à plusieurs cercles familiaux (cas d&apos;un professionnel de santé invité par plusieurs familles — voir section 6.2), lequel cercle est actuellement consulté.</>,
         ]} />
         <P>
           Ces deux cookies sont strictement nécessaires à la fourniture du service demandé par l&apos;utilisateur et
