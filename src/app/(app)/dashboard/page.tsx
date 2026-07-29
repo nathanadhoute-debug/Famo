@@ -84,6 +84,8 @@ export default async function DashboardHome() {
         parent={ctx.parent}
         parents={ctx.parents}
         activeParentId={ctx.parent?.id ?? ""}
+        families={ctx.families}
+        activeFamilyId={ctx.family.id}
         overdueDoses={overdue}
         latestVital={latestVital}
         vitalHistory={history}

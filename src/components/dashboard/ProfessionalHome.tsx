@@ -2,10 +2,11 @@ import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline, Sparkline } from "@/components/dashboard/editorial";
 import { ParentSwitcher } from "@/components/dashboard/ParentSwitcher";
+import { FamilySwitcher } from "@/components/dashboard/FamilySwitcher";
 import { ProfessionalVisitScheduler } from "@/components/dashboard/ProfessionalVisitScheduler";
 import { timeAgo, parseNumeric } from "@/lib/format";
 import { c, font } from "@/lib/theme";
-import type { ParentLite } from "@/lib/family";
+import type { ParentLite, FamilyLite } from "@/lib/family";
 
 const HOME_VISITING_CATEGORIES = ["aide_soignant", "infirmier", "kine", "autre"];
 
@@ -17,12 +18,15 @@ const HOME_VISITING_CATEGORIES = ["aide_soignant", "infirmier", "kine", "autre"]
  */
 export function ProfessionalHome({
   parent, parents, activeParentId,
+  families, activeFamilyId,
   overdueDoses, latestVital, vitalHistory, lastEntry,
   professionCategory, familyId, myVisits,
 }: {
   parent: ParentLite | null;
   parents: ParentLite[];
   activeParentId: string;
+  families: FamilyLite[];
+  activeFamilyId: string;
   overdueDoses: number;
   latestVital: { label: string; value: string; unit: string | null; recorded_at: string } | null;
   vitalHistory: number[];
@@ -38,13 +42,19 @@ export function ProfessionalHome({
         <div style={{ position: "relative" }}>
           <Eyebrow color="#7E9689">Suivi professionnel</Eyebrow>
 
+          {families.length > 1 && (
+            <div style={{ margin: "18px 0" }}>
+              <FamilySwitcher families={families} activeId={activeFamilyId} />
+            </div>
+          )}
+
           {parents.length > 1 && (
             <div style={{ margin: "18px 0" }}>
               <ParentSwitcher parents={parents} activeId={activeParentId} />
             </div>
           )}
 
-          <h1 style={{ fontFamily: font.display, fontSize: "clamp(26px,4vw,32px)", fontWeight: 500, lineHeight: 1.3, color: "#F4F2EC", margin: parents.length > 1 ? 0 : "18px 0 0", maxWidth: 500, letterSpacing: "-0.2px" }}>
+          <h1 style={{ fontFamily: font.display, fontSize: "clamp(26px,4vw,32px)", fontWeight: 500, lineHeight: 1.3, color: "#F4F2EC", margin: (families.length > 1 || parents.length > 1) ? 0 : "18px 0 0", maxWidth: 500, letterSpacing: "-0.2px" }}>
             {parent ? parent.name : "Aucun proche sélectionné"}
           </h1>
 

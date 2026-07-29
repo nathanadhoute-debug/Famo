@@ -1,4 +1,5 @@
 "use server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -62,6 +63,13 @@ export async function acceptInvitation(token: string): Promise<AcceptResult> {
   await admin.from("invitations")
     .update({ accepted_at: new Date().toISOString() })
     .eq("id", invite.id);
+
+  // Un compte peut déjà appartenir à une autre famille (ex. un professionnel
+  // réutilisant son compte pour un 2e cercle) — sans ça, getCurrentFamily()
+  // renverrait le tout premier cercle rejoint et l'utilisateur atterrirait
+  // sur le mauvais cercle juste après avoir accepté cette invitation.
+  const cookieStore = await cookies();
+  cookieStore.set("active_family_id", invite.family_id, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
 
   return { ok: true, familyId: invite.family_id };
 }

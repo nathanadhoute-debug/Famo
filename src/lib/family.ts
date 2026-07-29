@@ -5,6 +5,8 @@ export type MemberRole = "admin" | "member" | "readonly" | "professional";
 export type ProfessionCategory = "aide_soignant" | "infirmier" | "kine" | "medecin_traitant" | "chirurgien" | "autre";
 export type ParentLite = { id: string; name: string; birth_date: string | null };
 
+export type FamilyLite = { id: string; name: string };
+
 export type CurrentFamily = {
   user:    { id: string; email: string | null };
   family:  { id: string; name: string };
@@ -12,15 +14,20 @@ export type CurrentFamily = {
   professionCategory: ProfessionCategory | null;
   parent:  ParentLite | null;
   parents: ParentLite[];
+  families: FamilyLite[];
 };
 
 const ACTIVE_PARENT_COOKIE = "active_parent_id";
+const ACTIVE_FAMILY_COOKIE = "active_family_id";
 
 /**
  * Récupère le contexte familial de l'utilisateur connecté :
- * user → membership → family → proche actif (sélectionné via le cookie
- * `active_parent_id`, sinon le premier créé — comportement inchangé pour
- * un cercle avec un seul proche).
+ * user → cercle actif → proche actif. Un utilisateur (typiquement un
+ * professionnel de santé invité par plusieurs familles avec le même compte)
+ * peut avoir plusieurs lignes `family_members` : le cercle actif est
+ * sélectionné via le cookie `active_family_id`, sinon le premier rejoint
+ * (comportement inchangé pour un compte à un seul cercle). Le proche actif
+ * reste résolu comme avant via `active_parent_id`, à l'intérieur du cercle actif.
  * Retourne `null` si non connecté ou sans famille (→ à rediriger vers /onboarding).
  * Lecture via le client serveur authentifié (RLS respectée).
  */
@@ -30,23 +37,29 @@ export async function getCurrentFamily(): Promise<CurrentFamily | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: membership } = await supabase
+  const { data: memberships } = await supabase
     .from("family_members")
     .select("family_id, role, profession_category, authorized_parent_ids")
     .eq("user_id", user.id)
-    .order("joined_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .order("joined_at", { ascending: true });
 
-  if (!membership) return null;
+  if (!memberships || memberships.length === 0) return null;
 
-  const { data: family } = await supabase
+  const cookieStore = await cookies();
+  const activeFamilyId = cookieStore.get(ACTIVE_FAMILY_COOKIE)?.value;
+  const membership = memberships.find((m) => m.family_id === activeFamilyId) ?? memberships[0];
+
+  const { data: familiesRaw } = await supabase
     .from("families")
     .select("id, name")
-    .eq("id", membership.family_id)
-    .maybeSingle();
+    .in("id", memberships.map((m) => m.family_id));
 
+  const family = (familiesRaw ?? []).find((f) => f.id === membership.family_id);
   if (!family) return null;
+
+  const families = memberships
+    .map((m) => (familiesRaw ?? []).find((f) => f.id === m.family_id))
+    .filter((f): f is FamilyLite => !!f);
 
   const { data: parentsRaw } = await supabase
     .from("parents")
@@ -62,9 +75,8 @@ export async function getCurrentFamily(): Promise<CurrentFamily | null> {
   const parents = membership.role === "professional" && authorizedIds && authorizedIds.length > 0
     ? (parentsRaw ?? []).filter((p) => authorizedIds.includes(p.id))
     : (parentsRaw ?? []);
-  const cookieStore = await cookies();
-  const activeId = cookieStore.get(ACTIVE_PARENT_COOKIE)?.value;
-  const parent = parents.find((p) => p.id === activeId) ?? parents[0] ?? null;
+  const activeParentId = cookieStore.get(ACTIVE_PARENT_COOKIE)?.value;
+  const parent = parents.find((p) => p.id === activeParentId) ?? parents[0] ?? null;
 
   return {
     user:   { id: user.id, email: user.email ?? null },
@@ -73,6 +85,7 @@ export async function getCurrentFamily(): Promise<CurrentFamily | null> {
     professionCategory: (membership.profession_category as ProfessionCategory | null) ?? null,
     parent,
     parents,
+    families,
   };
 }
 
