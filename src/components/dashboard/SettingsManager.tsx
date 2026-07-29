@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { c } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline, Avatar } from "@/components/dashboard/editorial";
-import { updateProfile, renameFamily, removeMember, cancelInvite, updateNotificationPrefs, addAnotherParent, removeParent } from "@/lib/actions/circle";
+import { updateProfile, renameFamily, removeMember, cancelInvite, updateNotificationPrefs, addAnotherParent, removeParent, leaveFamily } from "@/lib/actions/circle";
 import { createInvite } from "@/lib/actions/invites";
 
 type Member = { userId: string; name: string; role: string; professionCategory?: string | null; professionDetail?: string | null };
@@ -284,6 +284,11 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
   };
   const kick = (userId: string) => start(async () => { const r = await removeMember(family.id, userId); if (!r.ok) return setErr(r.error); router.refresh(); });
   const cancel = (id: string) => start(async () => { const r = await cancelInvite(id); if (!r.ok) return setErr(r.error); router.refresh(); });
+  const leave = () => {
+    if (!window.confirm(`Quitter le cercle « ${family.name} » ? Vous perdrez l'accès aux informations des proches suivis.`)) return;
+    setErr("");
+    start(async () => { const r = await leaveFamily(family.id); if (!r.ok) return setErr(r.error); router.refresh(); });
+  };
 
   return (
     <section>
@@ -303,7 +308,12 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
                 )}
               </p>
             </div>
-            {isAdmin && m.userId !== currentUserId && (
+            {m.userId === currentUserId ? (
+              <button onClick={leave} disabled={pending}
+                style={{ background: "transparent", border: "none", cursor: "pointer", color: c.danger, fontSize: 12.5, padding: 4, whiteSpace: "nowrap" }}>
+                Quitter le cercle
+              </button>
+            ) : isAdmin && (
               <button onClick={() => kick(m.userId)} disabled={pending} aria-label="Retirer"
                 style={{ background: "transparent", border: "none", cursor: "pointer", color: c.eyebrow, display: "flex", padding: 4 }}>
                 <Icon name="x" size={17} />

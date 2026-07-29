@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireMembership } from "@/lib/auth-guard";
+import { sendCronEmail } from "@/lib/cron-mail";
 import type { ActionResult } from "@/lib/actions/types";
 
 /** Met à jour le nom affiché de l'utilisateur connecté. */
@@ -54,6 +55,93 @@ export async function removeMember(familyId: string, userId: string): Promise<Ac
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Erreur inattendue." };
   }
+}
+
+/**
+ * Permet à l'utilisateur connecté de se retirer lui-même du cercle — seul
+ * chemin self-service, pour tout rôle (membre, lecture seule, professionnel).
+ * On n'utilise pas `requireMembership` : elle bloque inconditionnellement le
+ * rôle `readonly` et le rôle `professional` sans `allowProfessional`, alors que
+ * quitter doit rester possible pour tous. Refusé si l'appelant est le dernier
+ * admin du cercle, pour ne pas laisser un cercle sans administrateur.
+ */
+export async function leaveFamily(familyId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { ok: false, error: "Vous devez être connecté." };
+
+    const admin = createAdminClient();
+    const { data: membership } = await admin
+      .from("family_members").select("role")
+      .eq("family_id", familyId).eq("user_id", user.id).maybeSingle();
+    if (!membership) return { ok: false, error: "Vous n'avez pas accès à ce cercle." };
+
+    if (membership.role === "admin") {
+      const { count } = await admin
+        .from("family_members")
+        .select("user_id", { count: "exact", head: true })
+        .eq("family_id", familyId).eq("role", "admin");
+      if ((count ?? 0) <= 1) {
+        return { ok: false, error: "Vous êtes le seul administrateur de ce cercle et ne pouvez pas le quitter." };
+      }
+    }
+
+    const { error } = await admin.from("family_members").delete()
+      .eq("family_id", familyId).eq("user_id", user.id);
+    if (error) return { ok: false, error: error.message };
+
+    // Le pro reste libre de partir sans autorisation préalable — mais son
+    // départ peut couper des alertes que la famille croit toujours actives
+    // (ex. renouvellement d'ordonnance suivi par le médecin traitant), donc
+    // on prévient les admins après coup. Best-effort : un échec d'email ne
+    // doit jamais faire échouer le départ, déjà acté ci-dessus.
+    if (membership.role === "professional") {
+      try {
+        await notifyAdminsOfProfessionalDeparture(admin, familyId, user.email ?? null);
+      } catch {
+        // best-effort, voir commentaire ci-dessus
+      }
+    }
+
+    revalidatePath("/dashboard/reglages");
+    revalidatePath("/dashboard");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Erreur inattendue." };
+  }
+}
+
+async function notifyAdminsOfProfessionalDeparture(
+  admin: ReturnType<typeof createAdminClient>,
+  familyId: string,
+  departingEmail: string | null
+): Promise<void> {
+  const [{ data: family }, { data: admins }] = await Promise.all([
+    admin.from("families").select("name").eq("id", familyId).maybeSingle(),
+    admin.from("family_members").select("user_id").eq("family_id", familyId).eq("role", "admin"),
+  ]);
+  if (!admins || admins.length === 0) return;
+
+  const { data: users } = await admin
+    .from("auth_users").select("email").in("id", admins.map((a) => a.user_id));
+  const to = (users ?? []).map((u) => u.email).filter((e): e is string => !!e);
+  if (to.length === 0) return;
+
+  const familyName = family?.name ?? "votre cercle";
+  await sendCronEmail({
+    to,
+    subject: `Un professionnel a quitté « ${familyName} »`,
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#1A2622;">
+        <h1 style="font-size:20px;color:#1E3830;margin-bottom:8px;">Départ d'un professionnel</h1>
+        <p style="color:#555;line-height:1.6;">
+          ${departingEmail ? `<strong>${departingEmail}</strong>` : "Un professionnel de santé"} a quitté le cercle
+          « ${familyName} ». Si des alertes reposaient sur son suivi (renouvellement d'ordonnance, etc.),
+          pensez à vérifier qui les reçoit désormais.
+        </p>
+      </div>`,
+  });
 }
 
 /**

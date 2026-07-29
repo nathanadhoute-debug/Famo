@@ -20,7 +20,7 @@ export default async function ReglagesPage() {
     return (
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "clamp(20px,3vw,34px) clamp(16px,4vw,36px) 48px" }}>
         <PageHead eyebrow="Réglages" title="Mon profil" subtitle="Vos informations personnelles" />
-        <ProfessionalSettings profileName={profile?.full_name ?? ""} userEmail={ctx.user.email ?? ""} />
+        <ProfessionalSettings profileName={profile?.full_name ?? ""} userEmail={ctx.user.email ?? ""} family={ctx.family} />
       </div>
     );
   }
