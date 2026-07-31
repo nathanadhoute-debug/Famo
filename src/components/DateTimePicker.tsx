@@ -161,7 +161,7 @@ export function DateTimePicker({ value, onChange, mode = "datetime", placeholder
   );
 }
 
-function ScrollColumn({ count, selected, onSelect }: {
+export function ScrollColumn({ count, selected, onSelect }: {
   count: number;
   selected: number | null;
   onSelect: (n: number) => void;

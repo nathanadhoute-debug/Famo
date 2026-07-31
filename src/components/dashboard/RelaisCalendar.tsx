@@ -41,6 +41,16 @@ export function RelaisCalendar({ visits }: { visits: VisitLite[] }) {
     display: "flex", padding: 4, borderRadius: 6,
   };
 
+  // Clic sur un jour du calendrier mensuel : ramène la frise de la semaine
+  // sur la semaine de ce jour, puis referme l'overlay.
+  const jumpToDate = (target: Date) => {
+    const targetMonday = mondayOf(target);
+    const currentMonday = mondayOf(now);
+    const diffDays = Math.round((targetMonday.getTime() - currentMonday.getTime()) / 86400000);
+    setWeekOffset(Math.round(diffDays / 7));
+    setMonthView(null);
+  };
+
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4, marginBottom: 6 }}>
@@ -93,7 +103,7 @@ export function RelaisCalendar({ visits }: { visits: VisitLite[] }) {
 
       {monthView && (
         <MonthOverlay month={monthView} visits={visits}
-          onClose={() => setMonthView(null)} onChangeMonth={setMonthView} />
+          onClose={() => setMonthView(null)} onChangeMonth={setMonthView} onSelectDay={jumpToDate} />
       )}
     </div>
   );
@@ -108,11 +118,12 @@ function monthGrid(monthStart: Date): Date[] {
   });
 }
 
-function MonthOverlay({ month, visits, onClose, onChangeMonth }: {
+function MonthOverlay({ month, visits, onClose, onChangeMonth, onSelectDay }: {
   month: Date;
   visits: VisitLite[];
   onClose: () => void;
   onChangeMonth: (d: Date) => void;
+  onSelectDay: (d: Date) => void;
 }) {
   const now = new Date();
   const grid = monthGrid(month);
@@ -153,10 +164,11 @@ function MonthOverlay({ month, visits, onClose, onChangeMonth }: {
             const v = visits.find((x) => parisDateKey(new Date(x.visit_date)) === parisDateKey(d));
             const bg = v ? (isToday ? c.terracotta : c.sage700) : "transparent";
             return (
-              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "3px 0" }}>
+              <button key={i} onClick={() => onSelectDay(d)}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: "3px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                 <span style={{
                   width: 28, height: 28, borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 12.5, background: bg, color: v ? "#F4F2EC" : inMonth ? c.sage900 : "#C7BFA6",
+                  fontSize: 12.5, fontFamily: font.body, background: bg, color: v ? "#F4F2EC" : inMonth ? c.sage900 : "#C7BFA6",
                   border: !v && isToday ? `1.5px solid ${c.terracotta}` : "none",
                   opacity: inMonth ? 1 : 0.5,
                 }}>
@@ -165,7 +177,7 @@ function MonthOverlay({ month, visits, onClose, onChangeMonth }: {
                 {v?.visitorName && (
                   <span style={{ fontSize: 8.5, color: c.eyebrow, fontWeight: 500 }}>{initials(v.visitorName)}</span>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>

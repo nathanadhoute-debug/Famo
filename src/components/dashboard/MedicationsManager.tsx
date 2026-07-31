@@ -5,6 +5,7 @@ import { c, font } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline } from "@/components/dashboard/editorial";
 import { DateTimePicker } from "@/components/DateTimePicker";
+import { TimeChipsInput } from "@/components/TimeChipsInput";
 import { addMedication, deactivateMedication } from "@/lib/actions/health";
 
 const CATEGORIES = ["Cardiologie", "Diabète", "Antalgique", "Neurologie", "Pneumologie", "Rhumatologie", "Autre"];
@@ -166,9 +167,8 @@ export function MedicationsManager({ initial, familyId, parentId, role, professi
               </select>
             </div>
             <div>
-              <label className="field-label">Horaires (ex : 08:00, 20:00)</label>
-              <input className="input" value={form.times} placeholder="08:00, 20:00"
-                onChange={(e) => setForm((f) => ({ ...f, times: e.target.value }))} />
+              <label className="field-label">Horaires</label>
+              <TimeChipsInput value={form.times} onChange={(v) => setForm((f) => ({ ...f, times: v }))} />
             </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 10, marginTop: 10 }}>
