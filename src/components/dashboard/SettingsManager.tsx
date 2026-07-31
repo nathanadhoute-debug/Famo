@@ -5,10 +5,10 @@ import { createClient } from "@/lib/supabase/client";
 import { c } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline, Avatar } from "@/components/dashboard/editorial";
-import { updateProfile, renameFamily, removeMember, cancelInvite, updateNotificationPrefs, addAnotherParent, removeParent, leaveFamily } from "@/lib/actions/circle";
+import { updateProfile, renameFamily, removeMember, cancelInvite, updateNotificationPrefs, addAnotherParent, removeParent, leaveFamily, updateProfessionalAccess } from "@/lib/actions/circle";
 import { createInvite } from "@/lib/actions/invites";
 
-type Member = { userId: string; name: string; role: string; professionCategory?: string | null; professionDetail?: string | null };
+type Member = { userId: string; name: string; role: string; professionCategory?: string | null; professionDetail?: string | null; authorizedParentIds?: string[] | null };
 type Invite = { id: string; email: string; role: string; professionCategory?: string | null };
 type NotificationPrefs = { rxExpiry: boolean; visitReminder: boolean; overdueDoses: boolean };
 type Parent = { id: string; name: string };
@@ -253,6 +253,9 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
   const [result, setResult] = useState<{ email: string; link: string; emailSent: boolean; emailError?: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [pending, start] = useTransition();
+  const [managingUserId, setManagingUserId] = useState<string | null>(null);
+  const [managingIds, setManagingIds] = useState<string[]>([]);
+  const [manageErr, setManageErr] = useState("");
 
   const isProfessional = role === "professional";
   const toggleParent = (id: string) =>
@@ -283,6 +286,19 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
     catch { /* clipboard indisponible */ }
   };
   const kick = (userId: string) => start(async () => { const r = await removeMember(family.id, userId); if (!r.ok) return setErr(r.error); router.refresh(); });
+  const openManage = (m: Member) => { setManagingUserId(m.userId); setManagingIds(m.authorizedParentIds ?? []); setManageErr(""); };
+  const toggleManageParent = (id: string) =>
+    setManagingIds((ids) => ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]);
+  const saveManage = (userId: string) => {
+    if (managingIds.length === 0) { setManageErr("Choisissez au moins un proche."); return; }
+    setManageErr("");
+    start(async () => {
+      const r = await updateProfessionalAccess(family.id, userId, managingIds);
+      if (!r.ok) return setManageErr(r.error);
+      setManagingUserId(null);
+      router.refresh();
+    });
+  };
   const cancel = (id: string) => start(async () => { const r = await cancelInvite(id); if (!r.ok) return setErr(r.error); router.refresh(); });
   const leave = () => {
     if (!window.confirm(`Quitter le cercle « ${family.name} » ? Vous perdrez l'accès aux informations des proches suivis.`)) return;
@@ -295,29 +311,62 @@ function MembersSection({ family, isAdmin, members, pendingInvites, currentUserI
       <Eyebrow>Membres du cercle</Eyebrow>
       <div style={{ marginTop: 8 }}>
         {members.map((m) => (
-          <div key={m.userId} style={{ display: "flex", alignItems: "center", gap: 13, padding: "13px 0", borderBottom: `1px solid ${c.hairline}` }}>
-            <Avatar name={m.name} size={34} bg={m.userId === currentUserId ? c.sage700 : c.sageSoft} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 14.5, fontWeight: 500, color: c.sage900, margin: 0 }}>
-                {m.name}{m.userId === currentUserId && <span style={{ color: c.eyebrow, fontWeight: 400 }}> · vous</span>}
-              </p>
-              <p style={{ fontSize: 12.5, color: c.eyebrow, margin: "1px 0 0" }}>
-                {ROLE_LABEL[m.role] ?? m.role}
-                {m.role === "professional" && m.professionCategory && (
-                  <> · {PROFESSION_LABEL[m.professionCategory] ?? m.professionCategory}{m.professionDetail ? ` (${m.professionDetail})` : ""}</>
+          <div key={m.userId}>
+            <div style={{ display: "flex", alignItems: "center", gap: 13, padding: "13px 0", borderBottom: managingUserId === m.userId ? "none" : `1px solid ${c.hairline}` }}>
+              <Avatar name={m.name} size={34} bg={m.userId === currentUserId ? c.sage700 : c.sageSoft} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 14.5, fontWeight: 500, color: c.sage900, margin: 0 }}>
+                  {m.name}{m.userId === currentUserId && <span style={{ color: c.eyebrow, fontWeight: 400 }}> · vous</span>}
+                </p>
+                <p style={{ fontSize: 12.5, color: c.eyebrow, margin: "1px 0 0" }}>
+                  {ROLE_LABEL[m.role] ?? m.role}
+                  {m.role === "professional" && m.professionCategory && (
+                    <> · {PROFESSION_LABEL[m.professionCategory] ?? m.professionCategory}{m.professionDetail ? ` (${m.professionDetail})` : ""}</>
+                  )}
+                </p>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {isAdmin && m.role === "professional" && m.userId !== currentUserId && (
+                  <button onClick={() => (managingUserId === m.userId ? setManagingUserId(null) : openManage(m))} disabled={pending}
+                    style={{ background: "transparent", border: "none", cursor: "pointer", color: c.sage700, fontSize: 12.5, padding: 4, whiteSpace: "nowrap" }}>
+                    Gérer l&apos;accès
+                  </button>
                 )}
-              </p>
+                {m.userId === currentUserId ? (
+                  <button onClick={leave} disabled={pending}
+                    style={{ background: "transparent", border: "none", cursor: "pointer", color: c.danger, fontSize: 12.5, padding: 4, whiteSpace: "nowrap" }}>
+                    Quitter le cercle
+                  </button>
+                ) : isAdmin && (
+                  <button onClick={() => kick(m.userId)} disabled={pending} aria-label="Retirer"
+                    style={{ background: "transparent", border: "none", cursor: "pointer", color: c.eyebrow, display: "flex", padding: 4 }}>
+                    <Icon name="x" size={17} />
+                  </button>
+                )}
+              </div>
             </div>
-            {m.userId === currentUserId ? (
-              <button onClick={leave} disabled={pending}
-                style={{ background: "transparent", border: "none", cursor: "pointer", color: c.danger, fontSize: 12.5, padding: 4, whiteSpace: "nowrap" }}>
-                Quitter le cercle
-              </button>
-            ) : isAdmin && (
-              <button onClick={() => kick(m.userId)} disabled={pending} aria-label="Retirer"
-                style={{ background: "transparent", border: "none", cursor: "pointer", color: c.eyebrow, display: "flex", padding: 4 }}>
-                <Icon name="x" size={17} />
-              </button>
+
+            {managingUserId === m.userId && (
+              <div style={{ padding: "4px 0 16px", borderBottom: `1px solid ${c.hairline}` }}>
+                <p style={{ fontSize: 12.5, color: c.sub, marginBottom: 8 }}>Proche(s) que {m.name} peut suivre :</p>
+                <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 10 }}>
+                  {parents.map((p) => (
+                    <label key={p.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13.5, color: c.sage900, cursor: "pointer" }}>
+                      <input type="checkbox" checked={managingIds.includes(p.id)} onChange={() => toggleManageParent(p.id)} />
+                      {p.name}
+                    </label>
+                  ))}
+                </div>
+                {manageErr && <p style={{ color: c.danger, fontSize: 13, marginBottom: 10 }}>{manageErr}</p>}
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button className="btn btn-primary" onClick={() => saveManage(m.userId)} disabled={pending} style={{ borderRadius: 9 }}>
+                    {pending ? "…" : "Enregistrer"}
+                  </button>
+                  <button className="btn" onClick={() => setManagingUserId(null)} style={{ background: "transparent", color: c.sub, borderRadius: 9 }}>
+                    Annuler
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         ))}

@@ -45,7 +45,7 @@ export default async function ReglagesPage() {
         profileName={profile?.full_name ?? ""}
         family={ctx.family}
         isAdmin={ctx.role === "admin"}
-        members={members.map((m) => ({ userId: m.userId, name: m.name, role: m.role, professionCategory: m.professionCategory, professionDetail: m.professionDetail }))}
+        members={members.map((m) => ({ userId: m.userId, name: m.name, role: m.role, professionCategory: m.professionCategory, professionDetail: m.professionDetail, authorizedParentIds: m.authorizedParentIds }))}
         pendingInvites={(invites ?? []).map((i) => ({ id: i.id, email: i.email, role: i.role, professionCategory: i.profession_category }))}
         currentUserId={ctx.user.id}
         userEmail={ctx.user.email ?? ""}

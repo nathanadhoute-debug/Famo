@@ -58,6 +58,38 @@ export async function removeMember(familyId: string, userId: string): Promise<Ac
 }
 
 /**
+ * Modifie a posteriori les proches qu'un professionnel de santé déjà membre
+ * peut suivre (admin uniquement). Jusqu'ici ce choix n'était possible qu'à
+ * l'invitation — seul moyen de le changer était de retirer puis réinviter
+ * le professionnel, ce qui l'obligeait à raccepter une invitation.
+ */
+export async function updateProfessionalAccess(
+  familyId: string, userId: string, authorizedParentIds: string[]
+): Promise<ActionResult> {
+  if (authorizedParentIds.length === 0) {
+    return { ok: false, error: "Choisissez au moins un proche que ce professionnel peut suivre." };
+  }
+  try {
+    await requireMembership(familyId, { admin: true });
+    const admin = createAdminClient();
+    const { data: member } = await admin
+      .from("family_members").select("role")
+      .eq("family_id", familyId).eq("user_id", userId).maybeSingle();
+    if (!member) return { ok: false, error: "Membre introuvable." };
+    if (member.role !== "professional") return { ok: false, error: "Cette action ne concerne que les professionnels invités." };
+
+    const { error } = await admin.from("family_members")
+      .update({ authorized_parent_ids: authorizedParentIds })
+      .eq("family_id", familyId).eq("user_id", userId);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/dashboard/reglages");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Erreur inattendue." };
+  }
+}
+
+/**
  * Permet à l'utilisateur connecté de se retirer lui-même du cercle — seul
  * chemin self-service, pour tout rôle (membre, lecture seule, professionnel).
  * On n'utilise pas `requireMembership` : elle bloque inconditionnellement le

@@ -96,6 +96,7 @@ export type FamilyMember = {
   joinedAt: string;
   professionCategory: ProfessionCategory | null;
   professionDetail: string | null;
+  authorizedParentIds: string[] | null;
 };
 
 /**
@@ -108,7 +109,7 @@ export async function getFamilyMembers(familyId: string): Promise<FamilyMember[]
 
   const { data: members } = await supabase
     .from("family_members")
-    .select("user_id, role, joined_at, profession_category, profession_detail")
+    .select("user_id, role, joined_at, profession_category, profession_detail, authorized_parent_ids")
     .eq("family_id", familyId)
     .order("joined_at", { ascending: true });
 
@@ -126,5 +127,6 @@ export async function getFamilyMembers(familyId: string): Promise<FamilyMember[]
     joinedAt: m.joined_at,
     professionCategory: (m.profession_category as ProfessionCategory | null) ?? null,
     professionDetail: m.profession_detail ?? null,
+    authorizedParentIds: (m.authorized_parent_ids as string[] | null) ?? null,
   }));
 }
