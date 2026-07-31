@@ -93,8 +93,7 @@ export function ProfessionalVisitScheduler({ initial, familyId, parentId }: {
       {initial.length > 0 && (
         <div style={{ marginTop: 16, marginBottom: 6 }}>
           <RelaisCalendar
-            visits={initial.map((v) => ({ visit_date: v.visit_date, visitor_id: null }))}
-            nameFor={() => "Vous"}
+            visits={initial.map((v) => ({ visit_date: v.visit_date, visitorName: "Vous" }))}
           />
         </div>
       )}

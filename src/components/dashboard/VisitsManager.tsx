@@ -63,7 +63,7 @@ export function VisitsManager({ initial, members, familyId, parentId, currentUse
       {/* Timeline de la semaine */}
       <Eyebrow>Cette semaine</Eyebrow>
       <div style={{ marginBottom: 4 }}>
-        <RelaisCalendar visits={initial} nameFor={nameFor} />
+        <RelaisCalendar visits={initial.map((v) => ({ visit_date: v.visit_date, visitorName: nameFor(v.visitor_id) }))} />
       </div>
 
       <Hairline margin="24px 0" />

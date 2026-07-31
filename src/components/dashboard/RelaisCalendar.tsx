@@ -8,7 +8,7 @@ import { mondayOf, parisDateKey, initials } from "@/lib/format";
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
-type VisitLite = { visit_date: string; visitor_id: string | null };
+type VisitLite = { visit_date: string; visitorName: string | null };
 
 /**
  * Frise de la semaine (avec flèches précédent/suivant) + calendrier mensuel
@@ -16,11 +16,11 @@ type VisitLite = { visit_date: string; visitor_id: string | null };
  * la page Relais et l'Accueil professionnel. Prend la liste COMPLÈTE des
  * visites (pas de fenêtre de dates) : le filtrage par semaine/mois se fait
  * ici côté client, pas de requête réseau supplémentaire à la navigation.
+ * Le nom du visiteur est déjà résolu en chaîne par l'appelant (jamais une
+ * fonction) : ce composant peut être rendu depuis un Server Component, et
+ * seules des données sérialisables peuvent traverser cette frontière.
  */
-export function RelaisCalendar({ visits, nameFor }: {
-  visits: VisitLite[];
-  nameFor: (id: string | null) => string | null;
-}) {
+export function RelaisCalendar({ visits }: { visits: VisitLite[] }) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthView, setMonthView] = useState<Date | null>(null);
 
@@ -32,7 +32,7 @@ export function RelaisCalendar({ visits, nameFor }: {
     const d = new Date(monday);
     d.setDate(d.getDate() + i);
     const v = visits.find((x) => parisDateKey(new Date(x.visit_date)) === parisDateKey(d));
-    return { date: d, weekday: WEEKDAYS[i], isToday: parisDateKey(d) === parisDateKey(now), name: v ? nameFor(v.visitor_id) : null };
+    return { date: d, weekday: WEEKDAYS[i], isToday: parisDateKey(d) === parisDateKey(now), name: v?.visitorName ?? null };
   });
   const assignedIdx = days.map((d, i) => (d.name ? i : -1)).filter((i) => i >= 0);
 
@@ -87,7 +87,7 @@ export function RelaisCalendar({ visits, nameFor }: {
       </div>
 
       {monthView && (
-        <MonthOverlay month={monthView} visits={visits} nameFor={nameFor}
+        <MonthOverlay month={monthView} visits={visits}
           onClose={() => setMonthView(null)} onChangeMonth={setMonthView} />
       )}
     </div>
@@ -103,10 +103,9 @@ function monthGrid(monthStart: Date): Date[] {
   });
 }
 
-function MonthOverlay({ month, visits, nameFor, onClose, onChangeMonth }: {
+function MonthOverlay({ month, visits, onClose, onChangeMonth }: {
   month: Date;
   visits: VisitLite[];
-  nameFor: (id: string | null) => string | null;
   onClose: () => void;
   onChangeMonth: (d: Date) => void;
 }) {
@@ -158,8 +157,8 @@ function MonthOverlay({ month, visits, nameFor, onClose, onChangeMonth }: {
                 }}>
                   {d.getDate()}
                 </span>
-                {v && nameFor(v.visitor_id) && (
-                  <span style={{ fontSize: 8.5, color: c.eyebrow, fontWeight: 500 }}>{initials(nameFor(v.visitor_id) as string)}</span>
+                {v?.visitorName && (
+                  <span style={{ fontSize: 8.5, color: c.eyebrow, fontWeight: 500 }}>{initials(v.visitorName)}</span>
                 )}
               </div>
             );

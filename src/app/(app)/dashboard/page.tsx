@@ -152,7 +152,7 @@ export default async function DashboardHome() {
           </Link>
         </div>
 
-        <RelaisCalendar visits={visits} nameFor={nameById} />
+        <RelaisCalendar visits={visits.map((v) => ({ visit_date: v.visit_date, visitorName: nameById(v.visitor_id) }))} />
       </section>
 
       {/* SANTÉ + PROCHAINE VISITE ----------------------------------- */}
