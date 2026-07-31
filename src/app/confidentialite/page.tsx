@@ -81,7 +81,7 @@ export default function ConfidentialitePage() {
         <h1 style={{ fontFamily: font.display, fontSize: 34, color: c.sage900, margin: "8px 0 6px", fontWeight: 500 }}>
           Politique de confidentialité
         </h1>
-        <p style={{ fontSize: 14, color: c.sub, margin: "0 0 8px" }}>Dernière mise à jour : 29 juillet 2026</p>
+        <p style={{ fontSize: 14, color: c.sub, margin: "0 0 8px" }}>Dernière mise à jour : 31 juillet 2026</p>
 
         <H2>1. Préambule</H2>
         <P>
@@ -221,6 +221,12 @@ export default function ConfidentialitePage() {
           ce cas, l&apos;isolation décrite à la section 6.1 s&apos;applique à chaque cercle indépendamment : les données
           d&apos;un cercle ne sont jamais visibles depuis un autre. Seul le nom des cercles auxquels ce professionnel a
           été invité lui est affiché, afin de lui permettre de naviguer entre eux.
+        </P>
+        <P>
+          Dans un cercle suivant plusieurs proches, un professionnel de santé invité n&apos;accède qu&apos;au(x) proche(s)
+          explicitement choisi(s) par l&apos;administrateur au moment de l&apos;invitation — jamais aux autres proches du
+          même cercle. Ce choix peut être modifié à tout moment par un administrateur, sans nécessiter le retrait
+          puis la réinvitation du professionnel.
         </P>
         <H3>6.3 Sous-traitants techniques</H3>
         <Table
