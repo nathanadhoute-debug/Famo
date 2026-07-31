@@ -5,6 +5,7 @@ import { Logo } from "@/components/Logo";
 import { c, font } from "@/lib/theme";
 import { createCircle, addParent } from "@/lib/actions/onboarding";
 import { createInvite } from "@/lib/actions/invites";
+import { DateTimePicker } from "@/components/DateTimePicker";
 
 type Step = "family" | "parent" | "invite";
 const STEPS: Step[] = ["family", "parent", "invite"];
@@ -111,8 +112,7 @@ export default function OnboardingPage() {
                 onChange={(e) => setParentName(e.target.value)}
                 placeholder="Jeanne Dupont" />
               <label className="field-label">Date de naissance <span style={{ fontWeight: 400 }}>(facultatif)</span></label>
-              <input className="input" type="date" value={birthDate}
-                onChange={(e) => setBirthDate(e.target.value)} />
+              <DateTimePicker mode="date" value={birthDate} onChange={setBirthDate} />
               <Actions>
                 <button className="btn btn-ghost" onClick={() => setStep("family")}>← Retour</button>
                 <button className="btn btn-primary" onClick={submitParent} disabled={loading || !parentName.trim()}>

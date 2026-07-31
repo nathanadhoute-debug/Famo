@@ -3,14 +3,14 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentFamily, getFamilyMembers } from "@/lib/family";
 import { Icon } from "@/components/Icon";
-import { Eyebrow, Hairline, Avatar, Sparkline } from "@/components/dashboard/editorial";
+import { Eyebrow, Hairline, Sparkline } from "@/components/dashboard/editorial";
 import { ParentSwitcher } from "@/components/dashboard/ParentSwitcher";
 import { ProfessionalHome } from "@/components/dashboard/ProfessionalHome";
-import { initials, timeAgo, parseNumeric, mondayOf, parisDateKey } from "@/lib/format";
+import { RelaisCalendar } from "@/components/dashboard/RelaisCalendar";
+import { initials, timeAgo, parseNumeric } from "@/lib/format";
 import { deriveParentStatus } from "@/lib/status";
 import { c, font } from "@/lib/theme";
 
-const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const AV_COLORS = [c.sage700, c.sageSoft, c.terracotta];
 
 export default async function DashboardHome() {
@@ -19,22 +19,17 @@ export default async function DashboardHome() {
   const supabase = await createClient();
 
   const now = new Date();
-  const monday = mondayOf(now);
-  const weekEnd = new Date(monday);
-  weekEnd.setDate(weekEnd.getDate() + 7);
-
   const parentId = ctx.parent?.id ?? "";
 
-  const [members, { data: dosesRaw }, { data: weekVisitsRaw }, { data: nextVisitRaw }, { data: vitalsRaw }, { data: journalRaw }] =
+  const [members, { data: dosesRaw }, { data: visitsRaw }, { data: vitalsRaw }, { data: journalRaw }] =
     await Promise.all([
       getFamilyMembers(ctx.family.id),
       supabase.from("today_doses").select("given, is_overdue").eq("family_id", ctx.family.id).eq("parent_id", parentId),
+      // Pas de fenêtre de dates : le composant RelaisCalendar gère lui-même la
+      // navigation semaine/mois côté client, sans requête réseau supplémentaire.
       supabase.from("visits").select("id, visit_date, visitor_id, note")
-        .eq("family_id", ctx.family.id).eq("parent_id", parentId).gte("visit_date", monday.toISOString()).lt("visit_date", weekEnd.toISOString())
+        .eq("family_id", ctx.family.id).eq("parent_id", parentId)
         .order("visit_date", { ascending: true }),
-      supabase.from("visits").select("id, visit_date, visitor_id, note")
-        .eq("family_id", ctx.family.id).eq("parent_id", parentId).gte("visit_date", now.toISOString())
-        .order("visit_date", { ascending: true }).limit(1),
       supabase.from("vitals").select("label, value, unit, recorded_at")
         .eq("family_id", ctx.family.id).eq("parent_id", parentId).order("recorded_at", { ascending: false }).limit(40),
       supabase.from("journal_entries").select("content, tags, author_id, created_at")
@@ -46,16 +41,8 @@ export default async function DashboardHome() {
 
   const doses = dosesRaw ?? [];
   const overdue = doses.filter((d) => !d.given && d.is_overdue).length;
-  const weekVisits = weekVisitsRaw ?? [];
-
-  // Timeline 7 jours (lundi → dimanche)
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(d.getDate() + i);
-    const v = weekVisits.find((x) => parisDateKey(new Date(x.visit_date)) === parisDateKey(d));
-    return { date: d, weekday: WEEKDAYS[i], isToday: parisDateKey(d) === parisDateKey(now), name: v ? nameById(v.visitor_id) : null };
-  });
-  const assignedIdx = days.map((d, i) => (d.name ? i : -1)).filter((i) => i >= 0);
+  const visits = visitsRaw ?? [];
+  const nextVisit = visits.find((v) => new Date(v.visit_date) >= now) ?? null;
 
   // Indicateur santé mis en avant + son historique
   const vitals = vitalsRaw ?? [];
@@ -64,20 +51,17 @@ export default async function DashboardHome() {
     ? vitals.filter((v) => v.label === latestVital.label).map((v) => parseNumeric(v.value)).filter((n): n is number => n !== null).reverse()
     : [];
 
-  // Prochaine visite
-  const nextVisit = nextVisitRaw?.[0] ?? null;
-
   // Journal
   const lastEntry = journalRaw?.[0] ?? null;
 
   // Un professionnel invité voit une vue centrée sur le proche, sans les
   // éléments sociaux familiaux (relais, avatars des membres, réglages).
   if (ctx.role === "professional") {
-    // Ses propres passages à venir uniquement (jamais le planning familial complet).
+    // Ses propres passages uniquement (jamais le planning familial complet).
+    // Pas de fenêtre de dates non plus, même raison que pour la famille.
     const { data: myVisits } = await supabase.from("visits")
       .select("id, visit_date, note")
       .eq("family_id", ctx.family.id).eq("parent_id", parentId).eq("visitor_id", ctx.user.id)
-      .gte("visit_date", now.toISOString())
       .order("visit_date", { ascending: true });
     return (
       <ProfessionalHome
@@ -168,41 +152,7 @@ export default async function DashboardHome() {
           </Link>
         </div>
 
-        <div style={{ position: "relative", padding: "4px 0 6px" }}>
-          {/* lignes de liaison */}
-          <div style={{ position: "absolute", top: 24, left: `${(0.5 / 7) * 100}%`, width: `${(6 / 7) * 100}%`, height: 1, background: "#E6E0CE" }} />
-          {assignedIdx.length >= 2 && (
-            <div style={{
-              position: "absolute", top: 24,
-              left: `${((assignedIdx[0] + 0.5) / 7) * 100}%`,
-              width: `${((assignedIdx[assignedIdx.length - 1] - assignedIdx[0]) / 7) * 100}%`,
-              height: 1, background: c.sage700,
-            }} />
-          )}
-          <div style={{ position: "relative", display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
-            {days.map((d, i) => (
-              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 9 }}>
-                {d.name ? (
-                  <Avatar name={d.name} size={40}
-                    bg={d.isToday ? c.terracotta : c.sage700}
-                    ring={d.isToday ? c.terracotta : undefined} />
-                ) : (
-                  <span style={{
-                    width: 40, height: 40, borderRadius: "50%", background: c.creamPage,
-                    border: `1.5px dashed ${d.isToday ? c.terracotta : "#E1DAC4"}`,
-                    display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    color: d.isToday ? c.terracotta : "#C7BFA6",
-                  }}>
-                    <Icon name="plus" size={14} />
-                  </span>
-                )}
-                <span style={{ fontSize: 11, color: d.isToday ? c.terracotta : c.eyebrow, fontWeight: d.isToday ? 500 : 400 }}>
-                  {d.isToday ? "Auj." : d.weekday}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <RelaisCalendar visits={visits} nameFor={nameById} />
       </section>
 
       {/* SANTÉ + PROCHAINE VISITE ----------------------------------- */}

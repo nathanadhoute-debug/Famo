@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { c, font } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { Eyebrow } from "@/components/dashboard/editorial";
+import { RelaisCalendar } from "@/components/dashboard/RelaisCalendar";
+import { DateTimePicker } from "@/components/DateTimePicker";
 import { addVisit, deleteVisit } from "@/lib/actions/visits";
 
 type Visit = { id: string; visit_date: string; note: string | null };
@@ -47,6 +49,11 @@ export function ProfessionalVisitScheduler({ initial, familyId, parentId }: {
     });
   };
 
+  // initial contient tout l'historique (pour alimenter RelaisCalendar) — la
+  // liste ci-dessous ne montre que ce qui reste à venir, comme auparavant.
+  const now0 = new Date(); now0.setHours(0, 0, 0, 0);
+  const upcoming = initial.filter((v) => new Date(v.visit_date) >= now0);
+
   return (
     <section>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -63,7 +70,7 @@ export function ProfessionalVisitScheduler({ initial, familyId, parentId }: {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div>
               <label className="field-label">Date & heure</label>
-              <input className="input" type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} />
+              <DateTimePicker value={date} onChange={setDate} />
             </div>
             <div>
               <label className="field-label">Note <span style={{ fontWeight: 400 }}>(facultatif)</span></label>
@@ -84,8 +91,17 @@ export function ProfessionalVisitScheduler({ initial, familyId, parentId }: {
       {error && !open && <p style={{ color: c.danger, fontSize: 13.5, marginTop: 10 }}>{error}</p>}
 
       {initial.length > 0 && (
+        <div style={{ marginTop: 16, marginBottom: 6 }}>
+          <RelaisCalendar
+            visits={initial.map((v) => ({ visit_date: v.visit_date, visitor_id: null }))}
+            nameFor={() => "Vous"}
+          />
+        </div>
+      )}
+
+      {upcoming.length > 0 && (
         <div style={{ marginTop: 14 }}>
-          {initial.map((v) => {
+          {upcoming.map((v) => {
             const d = new Date(v.visit_date);
             return (
               <div key={v.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderTop: `1px solid ${c.hairline}` }}>

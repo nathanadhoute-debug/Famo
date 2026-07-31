@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { c, font } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline } from "@/components/dashboard/editorial";
+import { DateTimePicker } from "@/components/DateTimePicker";
 import { addMedication, deactivateMedication } from "@/lib/actions/health";
 
 const CATEGORIES = ["Cardiologie", "Diabète", "Antalgique", "Neurologie", "Pneumologie", "Rhumatologie", "Autre"];
@@ -178,8 +179,8 @@ export function MedicationsManager({ initial, familyId, parentId, role, professi
             </div>
             <div>
               <label className="field-label">Expiration ordonnance</label>
-              <input className="input" type="date" value={form.rxExpiresAt}
-                onChange={(e) => setForm((f) => ({ ...f, rxExpiresAt: e.target.value }))} />
+              <DateTimePicker mode="date" value={form.rxExpiresAt}
+                onChange={(v) => setForm((f) => ({ ...f, rxExpiresAt: v }))} />
             </div>
           </div>
           <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 14, fontSize: 13.5, color: c.sub, cursor: "pointer" }}>

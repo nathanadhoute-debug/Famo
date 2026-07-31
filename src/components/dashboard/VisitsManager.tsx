@@ -1,16 +1,16 @@
 "use client";
-import { useState, useMemo, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { c, font } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
-import { Eyebrow, Hairline, Avatar } from "@/components/dashboard/editorial";
-import { mondayOf, parisDateKey } from "@/lib/format";
+import { Eyebrow, Hairline } from "@/components/dashboard/editorial";
+import { RelaisCalendar } from "@/components/dashboard/RelaisCalendar";
+import { DateTimePicker } from "@/components/DateTimePicker";
+import { parisDateKey } from "@/lib/format";
 import { addVisit, deleteVisit } from "@/lib/actions/visits";
 
 type Visit = { id: string; visit_date: string; note: string | null; visitor_id: string | null };
 type Member = { userId: string; name: string };
-
-const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
 export function VisitsManager({ initial, members, familyId, parentId, currentUserId }: {
   initial: Visit[];
@@ -29,16 +29,6 @@ export function VisitsManager({ initial, members, familyId, parentId, currentUse
     id ? (id === currentUserId ? "Vous" : members.find((m) => m.userId === id)?.name ?? "Membre") : "Visite";
 
   const now = new Date();
-  const monday = mondayOf(now);
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(d.getDate() + i);
-    const v = initial.find((x) => parisDateKey(new Date(x.visit_date)) === parisDateKey(d));
-    return { date: d, weekday: WEEKDAYS[i], isToday: parisDateKey(d) === parisDateKey(now), name: v ? nameFor(v.visitor_id) : null };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [initial]);
-  const assignedIdx = days.map((d, i) => (d.name ? i : -1)).filter((i) => i >= 0);
-
   const today0 = new Date(now); today0.setHours(0, 0, 0, 0);
   const upcoming = initial.filter((v) => new Date(v.visit_date) >= today0).sort((a, b) => +new Date(a.visit_date) - +new Date(b.visit_date));
   const past = initial.filter((v) => new Date(v.visit_date) < today0);
@@ -72,25 +62,8 @@ export function VisitsManager({ initial, members, familyId, parentId, currentUse
     <div>
       {/* Timeline de la semaine */}
       <Eyebrow>Cette semaine</Eyebrow>
-      <div style={{ position: "relative", padding: "18px 0 6px", marginBottom: 4 }}>
-        <div style={{ position: "absolute", top: 38, left: `${(0.5 / 7) * 100}%`, width: `${(6 / 7) * 100}%`, height: 1, background: "#E6E0CE" }} />
-        {assignedIdx.length >= 2 && (
-          <div style={{ position: "absolute", top: 38, left: `${((assignedIdx[0] + 0.5) / 7) * 100}%`, width: `${((assignedIdx[assignedIdx.length - 1] - assignedIdx[0]) / 7) * 100}%`, height: 1, background: c.sage700 }} />
-        )}
-        <div style={{ position: "relative", display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
-          {days.map((d, i) => (
-            <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 9 }}>
-              {d.name ? (
-                <Avatar name={d.name} size={40} bg={d.isToday ? c.terracotta : c.sage700} ring={d.isToday ? c.terracotta : undefined} />
-              ) : (
-                <span style={{ width: 40, height: 40, borderRadius: "50%", background: c.creamPage, border: `1.5px dashed ${d.isToday ? c.terracotta : "#E1DAC4"}`, display: "inline-flex", alignItems: "center", justifyContent: "center", color: d.isToday ? c.terracotta : "#C7BFA6" }}>
-                  <Icon name="plus" size={14} />
-                </span>
-              )}
-              <span style={{ fontSize: 11, color: d.isToday ? c.terracotta : c.eyebrow, fontWeight: d.isToday ? 500 : 400 }}>{d.isToday ? "Auj." : d.weekday}</span>
-            </div>
-          ))}
-        </div>
+      <div style={{ marginBottom: 4 }}>
+        <RelaisCalendar visits={initial} nameFor={nameFor} />
       </div>
 
       <Hairline margin="24px 0" />
@@ -110,7 +83,7 @@ export function VisitsManager({ initial, members, familyId, parentId, currentUse
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div>
               <label className="field-label">Date & heure</label>
-              <input className="input" type="datetime-local" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} />
+              <DateTimePicker value={form.date} onChange={(v) => setForm((f) => ({ ...f, date: v }))} />
             </div>
             <div>
               <label className="field-label">Qui passe ?</label>
