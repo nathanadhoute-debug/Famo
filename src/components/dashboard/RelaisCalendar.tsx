@@ -78,8 +78,13 @@ export function RelaisCalendar({ visits }: { visits: VisitLite[] }) {
                   <Icon name="plus" size={14} />
                 </span>
               )}
-              <span style={{ fontSize: 11, color: d.isToday ? c.terracotta : c.eyebrow, fontWeight: d.isToday ? 500 : 400 }}>
-                {d.isToday ? "Auj." : d.weekday}
+              <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                <span style={{ fontSize: 11, color: d.isToday ? c.terracotta : c.eyebrow, fontWeight: d.isToday ? 500 : 400 }}>
+                  {d.isToday ? "Auj." : d.weekday}
+                </span>
+                <span style={{ fontSize: 10, color: d.isToday ? c.terracotta : "#C7BFA6" }}>
+                  {d.date.getDate()}
+                </span>
               </span>
             </button>
           ))}

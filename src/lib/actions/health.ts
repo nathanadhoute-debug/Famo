@@ -12,6 +12,7 @@ export async function addVital(input: {
   value: string;
   unit?: string;
   icon?: string;
+  recordedAt?: string;
 }): Promise<ActionResult> {
   if (!input.label.trim() || !input.value.trim()) {
     return { ok: false, error: "Indiquez un intitulé et une valeur." };
@@ -27,6 +28,10 @@ export async function addVital(input: {
       value: input.value.trim(),
       unit: input.unit?.trim() || null,
       icon: input.icon || null,
+      // Permet de renseigner une mesure prise plus tôt (pas forcément à
+      // l'instant de la saisie) — repli sur l'heure actuelle si absent
+      // (comportement inchangé, colonne à défaut `now()` en base).
+      ...(input.recordedAt ? { recorded_at: input.recordedAt } : {}),
     });
     if (error) return { ok: false, error: error.message };
     revalidatePath("/dashboard/sante");

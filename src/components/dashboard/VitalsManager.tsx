@@ -4,8 +4,15 @@ import { useRouter } from "next/navigation";
 import { c, font } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline, Sparkline } from "@/components/dashboard/editorial";
+import { DateTimePicker } from "@/components/DateTimePicker";
 import { parseNumeric, timeAgo } from "@/lib/format";
 import { addVital, deleteVital } from "@/lib/actions/health";
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const nowLocal = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+};
 
 type Vital = {
   id: string;
@@ -37,7 +44,7 @@ export function VitalsManager({ initial, familyId, parentId }: {
   parentId: string | null;
 }) {
   const router = useRouter();
-  const [form, setForm] = useState({ label: "", value: "", unit: "" });
+  const [form, setForm] = useState({ label: "", value: "", unit: "", recordedAt: nowLocal() });
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -66,9 +73,10 @@ export function VitalsManager({ initial, familyId, parentId }: {
     if (!form.label.trim() || !form.value.trim()) { setError("Intitulé et valeur requis."); return; }
     setError("");
     start(async () => {
-      const res = await addVital({ familyId, parentId, label: form.label, value: form.value, unit: form.unit });
+      const recordedAt = form.recordedAt ? new Date(form.recordedAt).toISOString() : undefined;
+      const res = await addVital({ familyId, parentId, label: form.label, value: form.value, unit: form.unit, recordedAt });
       if (!res.ok) return setError(res.error);
-      setForm({ label: "", value: "", unit: "" });
+      setForm({ label: "", value: "", unit: "", recordedAt: nowLocal() });
       setOpen(false);
       router.refresh();
     });
@@ -161,6 +169,10 @@ export function VitalsManager({ initial, familyId, parentId }: {
               <input className="input" value={form.unit} placeholder="mmHg"
                 onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))} />
             </div>
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <label className="field-label">Mesurée le <span style={{ fontWeight: 400 }}>(par défaut : maintenant)</span></label>
+            <DateTimePicker value={form.recordedAt} onChange={(v) => setForm((f) => ({ ...f, recordedAt: v }))} />
           </div>
           {error && <p style={{ color: c.danger, fontSize: 13.5, marginTop: 12 }}>{error}</p>}
           <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
