@@ -78,7 +78,6 @@ export default async function DashboardHome() {
           authorName: nameById(lastEntry.author_id) ?? "Membre",
           created_at: lastEntry.created_at,
         } : null}
-        professionCategory={ctx.professionCategory}
         familyId={ctx.family.id}
         myVisits={myVisits ?? []}
       />

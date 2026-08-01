@@ -4,15 +4,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireMembership } from "@/lib/auth-guard";
 import type { ActionResult } from "@/lib/actions/types";
 
-// Seuls les professionnels qui passent physiquement au domicile peuvent se
-// programmer eux-mêmes sur le Relais — médecin traitant/chirurgien (plutôt
-// des consultations que des passages à domicile) en sont exclus.
-const HOME_VISITING_CATEGORIES = ["aide_soignant", "infirmier", "kine", "autre"];
-
 /**
- * Programme une visite auprès du proche. Un professionnel ne peut se
- * programmer que lui-même (jamais assigner un tiers) et seulement s'il fait
- * partie des catégories qui passent à domicile.
+ * Programme une visite (ou un rendez-vous) auprès du proche. Un professionnel
+ * ne peut se programmer que lui-même, jamais assigner un tiers — mais toutes
+ * les catégories professionnelles peuvent le faire (initialement réservé aux
+ * catégories à domicile, étendu à médecin traitant/chirurgien le 01/08/2026 :
+ * un rendez-vous en cabinet se programme de la même façon qu'un passage).
  */
 export async function addVisit(input: {
   familyId: string;
@@ -23,10 +20,7 @@ export async function addVisit(input: {
 }): Promise<ActionResult> {
   if (!input.visitDate) return { ok: false, error: "Choisissez une date." };
   try {
-    const { userId, role, professionCategory } = await requireMembership(input.familyId, { allowProfessional: true });
-    if (role === "professional" && !HOME_VISITING_CATEGORIES.includes(professionCategory ?? "")) {
-      return { ok: false, error: "Cette action n'est pas disponible pour votre profil professionnel." };
-    }
+    const { userId, role } = await requireMembership(input.familyId, { allowProfessional: true });
     const visitorId = role === "professional" ? userId : (input.visitorId || null);
     const admin = createAdminClient();
     const { error } = await admin.from("visits").insert({

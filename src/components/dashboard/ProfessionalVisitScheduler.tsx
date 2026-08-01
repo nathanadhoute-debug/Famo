@@ -12,10 +12,11 @@ import { addVisit, deleteVisit } from "@/lib/actions/visits";
 type Visit = { id: string; visit_date: string; note: string | null };
 
 /**
- * Un professionnel qui passe à domicile (aide-soignant, infirmier, kiné,
- * autre) peut programmer sa propre date de passage — jamais assigner
- * quelqu'un d'autre, jamais voir le reste du planning familial. Sa visite
- * apparaît ensuite normalement sur le Relais que la famille voit.
+ * Un professionnel de santé peut programmer son propre prochain rendez-vous
+ * (passage à domicile ou consultation, toutes catégories depuis le
+ * 01/08/2026) — jamais assigner quelqu'un d'autre, jamais voir le reste du
+ * planning familial. Le rendez-vous apparaît ensuite normalement sur le
+ * Relais que la famille voit.
  */
 export function ProfessionalVisitScheduler({ initial, familyId, parentId }: {
   initial: Visit[];
@@ -58,7 +59,7 @@ export function ProfessionalVisitScheduler({ initial, familyId, parentId }: {
   return (
     <section>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Eyebrow>Mon prochain passage</Eyebrow>
+        <Eyebrow>Mon prochain rendez-vous</Eyebrow>
         {!open && (
           <button onClick={() => setOpen(true)} className="btn" style={{ background: c.sage900, color: "#F4F2EC", padding: "8px 15px", fontSize: 13, borderRadius: 9 }}>
             <Icon name="plus" size={15} /> Programmer

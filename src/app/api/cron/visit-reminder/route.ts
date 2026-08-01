@@ -55,9 +55,9 @@ export async function GET(req: Request) {
     });
     remindersSent += emails.length ? 1 : 0;
 
-    // Rappel dédié si le passage est celui d'un professionnel de santé qui
-    // s'est programmé lui-même (aide-soignant/infirmier/kiné/autre) — toujours
-    // envoyé, indépendamment de notify_visit_reminder (réservé à la famille).
+    // Rappel dédié si le rendez-vous est celui d'un professionnel de santé qui
+    // s'est programmé lui-même (toutes catégories depuis le 01/08/2026) —
+    // toujours envoyé, indépendamment de notify_visit_reminder (réservé à la famille).
     const { data: membership } = await admin
       .from("family_members").select("role").eq("family_id", visit.family_id).eq("user_id", visit.visitor_id!).maybeSingle();
     if (membership?.role === "professional") {
@@ -66,10 +66,10 @@ export async function GET(req: Request) {
         const visitTime = new Date(visit.visit_date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" });
         await sendCronEmail({
           to: [proUser.email],
-          subject: `Rappel : votre passage prévu demain auprès de ${parentName}`,
+          subject: `Rappel : votre rendez-vous prévu demain auprès de ${parentName}`,
           html: `
             <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#1A2622;">
-              <h1 style="font-size:22px;color:#1E3830;margin-bottom:8px;">Rappel de passage</h1>
+              <h1 style="font-size:22px;color:#1E3830;margin-bottom:8px;">Rappel de rendez-vous</h1>
               <p style="color:#555;line-height:1.6;">
                 Vous êtes prévu·e demain à <strong>${visitTime}</strong> auprès de <strong>${parentName}</strong>.
               </p>

@@ -8,8 +8,6 @@ import { timeAgo, parseNumeric } from "@/lib/format";
 import { c, font } from "@/lib/theme";
 import type { ParentLite, FamilyLite } from "@/lib/family";
 
-const HOME_VISITING_CATEGORIES = ["aide_soignant", "infirmier", "kine", "autre"];
-
 /**
  * Accueil d'un professionnel de santé invité dans le cercle : vue centrée
  * sur le proche suivi (pas d'éléments sociaux familiaux — pas de timeline
@@ -20,7 +18,7 @@ export function ProfessionalHome({
   parent, parents, activeParentId,
   families, activeFamilyId,
   overdueDoses, latestVital, vitalHistory, lastEntry,
-  professionCategory, familyId, myVisits,
+  familyId, myVisits,
 }: {
   parent: ParentLite | null;
   parents: ParentLite[];
@@ -31,11 +29,9 @@ export function ProfessionalHome({
   latestVital: { label: string; value: string; unit: string | null; recorded_at: string } | null;
   vitalHistory: number[];
   lastEntry: { content: string; authorName: string; created_at: string } | null;
-  professionCategory: string | null;
   familyId: string;
   myVisits: { id: string; visit_date: string; note: string | null }[];
 }) {
-  const canScheduleVisit = HOME_VISITING_CATEGORIES.includes(professionCategory ?? "");
   return (
     <div style={{ maxWidth: 860, margin: "0 auto", padding: "clamp(20px,3vw,34px) clamp(16px,4vw,36px) 48px" }}>
       <section style={{ position: "relative", background: c.sage900, borderRadius: 20, padding: "clamp(28px,4vw,42px)", overflow: "hidden", marginBottom: 40 }}>
@@ -130,12 +126,8 @@ export function ProfessionalHome({
         </Link>
       </section>
 
-      {canScheduleVisit && (
-        <>
-          <Hairline margin="30px 0" />
-          <ProfessionalVisitScheduler initial={myVisits} familyId={familyId} parentId={parent?.id ?? null} />
-        </>
-      )}
+      <Hairline margin="30px 0" />
+      <ProfessionalVisitScheduler initial={myVisits} familyId={familyId} parentId={parent?.id ?? null} />
     </div>
   );
 }
