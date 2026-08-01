@@ -67,6 +67,16 @@ export function RelaisCalendar({ visits, onAddDay, addHref }: {
     setMonthView(null);
   };
 
+  // Comportement partagé pour un clic sur un jour VIDE, que ce soit sur la
+  // frise ou dans le calendrier mensuel — sans ça, cliquer un jour vide dans
+  // le calendrier mensuel ne faisait que sauter à la bonne semaine sans
+  // jamais ouvrir l'ajout, contrairement à un clic direct sur la frise.
+  const handleEmptyDayClick = onAddDay
+    ? onAddDay
+    : addHref
+      ? (d: Date) => router.push(`${addHref}?date=${dateKey(d)}`)
+      : undefined;
+
   // Libellé du mois affiché au-dessus de la frise — une semaine peut chevaucher
   // deux mois (ex. 27 juillet → 2 août), sinon un seul suffit.
   const firstDay = days[0].date;
@@ -108,8 +118,7 @@ export function RelaisCalendar({ visits, onAddDay, addHref }: {
           {days.map((d, i) => (
             <button key={i}
               onClick={() => {
-                if (!d.name && onAddDay) { onAddDay(d.date); return; }
-                if (!d.name && addHref) { router.push(`${addHref}?date=${dateKey(d.date)}`); return; }
+                if (!d.name && handleEmptyDayClick) { handleEmptyDayClick(d.date); return; }
                 setMonthView(new Date(d.date.getFullYear(), d.date.getMonth(), 1));
               }}
               onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)}
@@ -146,7 +155,8 @@ export function RelaisCalendar({ visits, onAddDay, addHref }: {
 
       {monthView && (
         <MonthOverlay month={monthView} visits={visits}
-          onClose={() => setMonthView(null)} onChangeMonth={setMonthView} onSelectDay={jumpToDate} />
+          onClose={() => setMonthView(null)} onChangeMonth={setMonthView} onSelectDay={jumpToDate}
+          onAddDay={handleEmptyDayClick} />
       )}
     </div>
   );
@@ -161,12 +171,13 @@ function monthGrid(monthStart: Date): Date[] {
   });
 }
 
-function MonthOverlay({ month, visits, onClose, onChangeMonth, onSelectDay }: {
+function MonthOverlay({ month, visits, onClose, onChangeMonth, onSelectDay, onAddDay }: {
   month: Date;
   visits: VisitLite[];
   onClose: () => void;
   onChangeMonth: (d: Date) => void;
   onSelectDay: (d: Date) => void;
+  onAddDay?: (d: Date) => void;
 }) {
   const now = new Date();
   const grid = monthGrid(month);
@@ -209,7 +220,11 @@ function MonthOverlay({ month, visits, onClose, onChangeMonth, onSelectDay }: {
             const hovered = hoverIdx === i;
             const bg = v ? (isToday ? c.terracotta : c.sage700) : hovered ? c.sage050 : "transparent";
             return (
-              <button key={i} onClick={() => onSelectDay(d)}
+              <button key={i}
+                onClick={() => {
+                  if (!v && onAddDay) { onAddDay(d); onClose(); return; }
+                  onSelectDay(d);
+                }}
                 onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)}
                 style={{ background: "none", border: "none", cursor: "pointer", padding: "3px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                 <span style={{
