@@ -56,3 +56,15 @@ export function mondayOf(ref: Date): Date {
 export function parisDateKey(date: Date): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(date);
 }
+
+/**
+ * Formate une date en "YYYY-MM-DDTHH:mm" (heure locale, sans fuseau) —
+ * même format que value/onChange de DateTimePicker et des <input
+ * type="datetime-local"> qu'il remplace. Utile pour pré-remplir le
+ * formulaire "Programmer une visite" quand on clique un jour précis
+ * sur la frise Relais (heure par défaut : 9h).
+ */
+export function localDateTimeStr(date: Date, hour = 9, minute = 0): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(hour)}:${pad(minute)}`;
+}

@@ -6,7 +6,7 @@ import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline } from "@/components/dashboard/editorial";
 import { RelaisCalendar } from "@/components/dashboard/RelaisCalendar";
 import { DateTimePicker } from "@/components/DateTimePicker";
-import { parisDateKey } from "@/lib/format";
+import { parisDateKey, localDateTimeStr } from "@/lib/format";
 import { addVisit, deleteVisit } from "@/lib/actions/visits";
 
 type Visit = { id: string; visit_date: string; note: string | null; visitor_id: string | null };
@@ -63,7 +63,10 @@ export function VisitsManager({ initial, members, familyId, parentId, currentUse
       {/* Timeline de la semaine */}
       <Eyebrow>Cette semaine</Eyebrow>
       <div style={{ marginBottom: 4 }}>
-        <RelaisCalendar visits={initial.map((v) => ({ visit_date: v.visit_date, visitorName: nameFor(v.visitor_id) }))} />
+        <RelaisCalendar
+          visits={initial.map((v) => ({ visit_date: v.visit_date, visitorName: nameFor(v.visitor_id) }))}
+          onAddDay={(d) => { setForm((f) => ({ ...f, date: localDateTimeStr(d) })); setOpen(true); setError(""); }}
+        />
       </div>
 
       <Hairline margin="24px 0" />

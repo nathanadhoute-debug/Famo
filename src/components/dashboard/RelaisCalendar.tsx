@@ -20,7 +20,7 @@ type VisitLite = { visit_date: string; visitorName: string | null };
  * fonction) : ce composant peut être rendu depuis un Server Component, et
  * seules des données sérialisables peuvent traverser cette frontière.
  */
-export function RelaisCalendar({ visits }: { visits: VisitLite[] }) {
+export function RelaisCalendar({ visits, onAddDay }: { visits: VisitLite[]; onAddDay?: (date: Date) => void }) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthView, setMonthView] = useState<Date | null>(null);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
@@ -65,6 +65,11 @@ export function RelaisCalendar({ visits }: { visits: VisitLite[] }) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 4, marginBottom: 6 }}>
         <span style={{ fontSize: 12.5, color: c.sub, fontFamily: font.body }}>{monthLabel}</span>
         <div style={{ display: "flex", gap: 4 }}>
+          <button aria-label="Voir le calendrier du mois"
+            onClick={() => setMonthView(new Date(days[3].date.getFullYear(), days[3].date.getMonth(), 1))}
+            style={arrowStyle}>
+            <Icon name="calendar" size={15} />
+          </button>
           <button aria-label="Semaine précédente" onClick={() => setWeekOffset((w) => w - 1)} style={arrowStyle}>
             <Icon name="chevron-left" size={16} />
           </button>
@@ -86,7 +91,11 @@ export function RelaisCalendar({ visits }: { visits: VisitLite[] }) {
         )}
         <div style={{ position: "relative", display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
           {days.map((d, i) => (
-            <button key={i} onClick={() => setMonthView(new Date(d.date.getFullYear(), d.date.getMonth(), 1))}
+            <button key={i}
+              onClick={() => {
+                if (!d.name && onAddDay) onAddDay(d.date);
+                else setMonthView(new Date(d.date.getFullYear(), d.date.getMonth(), 1));
+              }}
               onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)}
               style={{
                 background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 12,

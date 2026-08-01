@@ -6,6 +6,7 @@ import { Icon } from "@/components/Icon";
 import { Eyebrow } from "@/components/dashboard/editorial";
 import { RelaisCalendar } from "@/components/dashboard/RelaisCalendar";
 import { DateTimePicker } from "@/components/DateTimePicker";
+import { localDateTimeStr } from "@/lib/format";
 import { addVisit, deleteVisit } from "@/lib/actions/visits";
 
 type Visit = { id: string; visit_date: string; note: string | null };
@@ -94,6 +95,7 @@ export function ProfessionalVisitScheduler({ initial, familyId, parentId }: {
         <div style={{ marginTop: 16, marginBottom: 6 }}>
           <RelaisCalendar
             visits={initial.map((v) => ({ visit_date: v.visit_date, visitorName: "Vous" }))}
+            onAddDay={(d) => { setDate(localDateTimeStr(d)); setOpen(true); setError(""); }}
           />
         </div>
       )}
