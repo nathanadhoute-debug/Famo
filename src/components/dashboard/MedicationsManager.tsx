@@ -120,7 +120,7 @@ export function MedicationsManager({ initial, familyId, parentId, role, professi
         </div>
       ) : (
         <p style={{ fontSize: 15, color: c.sub, lineHeight: 1.6, padding: "8px 0 20px" }}>
-          Aucun médicament suivi. Ajoutez-en un ci-dessous.
+          {canManageMeds ? "Aucun médicament suivi. Ajoutez-en un ci-dessous." : "Aucun médicament suivi pour l'instant."}
         </p>
       )}
 
