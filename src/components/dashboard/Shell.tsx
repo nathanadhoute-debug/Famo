@@ -35,6 +35,8 @@ export function Shell({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [hoveredHref, setHoveredHref] = useState<string | null>(null);
+  const [profileHovered, setProfileHovered] = useState(false);
   const initials = userName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
   const NAV = role === "professional" ? NAV_PROFESSIONAL : NAV_FAMILY;
 
@@ -42,18 +44,20 @@ export function Shell({
     <nav style={{ display: "grid", gap: 4 }}>
       {NAV.map((item) => {
         const active = pathname === item.href;
+        const hovered = hoveredHref === item.href;
         return (
           <Link
             key={item.href}
             href={item.href}
             onClick={() => setOpen(false)}
-            className={active ? undefined : "dash-nav-link"}
+            onMouseEnter={() => setHoveredHref(item.href)}
+            onMouseLeave={() => setHoveredHref(null)}
             style={{
               display: "flex", alignItems: "center", gap: 12,
               padding: "11px 14px", borderRadius: 12,
               fontSize: 15, fontWeight: active ? 600 : 500,
-              color: active ? "#fff" : "rgba(255,255,255,.72)",
-              background: active ? "rgba(255,255,255,.14)" : "transparent",
+              color: active || hovered ? "#fff" : "rgba(255,255,255,.72)",
+              background: active ? "rgba(255,255,255,.14)" : hovered ? "rgba(255,255,255,.09)" : "transparent",
               transition: "background .15s, color .15s",
             }}
           >
@@ -77,8 +81,9 @@ export function Shell({
       </div>
       {nav}
       <div style={{ marginTop: "auto" }}>
-        <Link href="/dashboard/reglages" onClick={() => setOpen(false)} className="dash-nav-link"
-          style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 8px", borderRadius: 12 }}>
+        <Link href="/dashboard/reglages" onClick={() => setOpen(false)}
+          onMouseEnter={() => setProfileHovered(true)} onMouseLeave={() => setProfileHovered(false)}
+          style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 8px", borderRadius: 12, background: profileHovered ? "rgba(255,255,255,.09)" : "transparent", transition: "background .15s" }}>
           <span style={{
             width: 34, height: 34, borderRadius: 999, background: "rgba(255,255,255,.16)", color: "#fff",
             display: "grid", placeItems: "center", fontSize: 13, fontWeight: 600, flexShrink: 0,
@@ -92,7 +97,6 @@ export function Shell({
   return (
     <div style={{ minHeight: "100vh", background: c.creamPage }}>
       <style>{`
-        .dash-nav-link:hover { background: rgba(255,255,255,.1); color: #fff; }
         .dash-sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 250px;
           background: ${c.sage900}; z-index: 40; }
         .dash-main { margin-left: 250px; min-height: 100vh; }

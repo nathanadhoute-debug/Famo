@@ -67,10 +67,10 @@ export function RelaisCalendar({ visits, onAddDay, addHref }: {
     setMonthView(null);
   };
 
-  // Comportement partagé pour un clic sur un jour VIDE, que ce soit sur la
-  // frise ou dans le calendrier mensuel — sans ça, cliquer un jour vide dans
-  // le calendrier mensuel ne faisait que sauter à la bonne semaine sans
-  // jamais ouvrir l'ajout, contrairement à un clic direct sur la frise.
+  // Sur la frise, tout clic sur un jour (vide ou déjà assigné) pré-remplit le
+  // formulaire sur cette date. Dans le calendrier mensuel (MonthOverlay plus
+  // bas), seul un jour VIDE déclenche ce comportement — un jour déjà pris y
+  // navigue simplement dessus (voir onSelectDay).
   const handleEmptyDayClick = onAddDay
     ? onAddDay
     : addHref
@@ -118,11 +118,7 @@ export function RelaisCalendar({ visits, onAddDay, addHref }: {
           {days.map((d, i) => (
             <button key={i}
               onClick={() => {
-                if (d.name) {
-                  if (addHref) { router.push(`${addHref}?date=${dateKey(d.date)}`); return; }
-                } else if (handleEmptyDayClick) {
-                  handleEmptyDayClick(d.date); return;
-                }
+                if (handleEmptyDayClick) { handleEmptyDayClick(d.date); return; }
                 setMonthView(new Date(d.date.getFullYear(), d.date.getMonth(), 1));
               }}
               onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)}
