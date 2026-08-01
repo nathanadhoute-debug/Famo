@@ -1,5 +1,5 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { c, font } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
@@ -27,6 +27,20 @@ export function VisitsManager({ initial, members, familyId, parentId, currentUse
 
   const nameFor = (id: string | null) =>
     id ? (id === currentUserId ? "Vous" : members.find((m) => m.userId === id)?.name ?? "Membre") : "Visite";
+
+  // Arrivée depuis le "+" d'un jour sur l'Accueil (RelaisCalendar y navigue
+  // vers /dashboard/relais?date=YYYY-MM-DD, faute de formulaire sur place) :
+  // ouvre directement le formulaire pré-rempli sur cette date. Lecture
+  // manuelle de l'URL (pas useSearchParams) pour éviter d'imposer un
+  // Suspense boundary à toute la page pour ce seul cas d'usage.
+  useEffect(() => {
+    const dateParam = new URLSearchParams(window.location.search).get("date");
+    if (dateParam) {
+      setForm((f) => ({ ...f, date: `${dateParam}T09:00` }));
+      setOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const now = new Date();
   const today0 = new Date(now); today0.setHours(0, 0, 0, 0);

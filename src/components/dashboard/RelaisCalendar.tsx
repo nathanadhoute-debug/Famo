@@ -1,9 +1,13 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { c, font } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { Avatar } from "@/components/dashboard/editorial";
 import { mondayOf, parisDateKey, initials } from "@/lib/format";
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const dateKey = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
@@ -19,8 +23,19 @@ type VisitLite = { visit_date: string; visitorName: string | null };
  * Le nom du visiteur est déjà résolu en chaîne par l'appelant (jamais une
  * fonction) : ce composant peut être rendu depuis un Server Component, et
  * seules des données sérialisables peuvent traverser cette frontière.
+ * `onAddDay` (fonction) n'a de sens que si l'appelant est lui-même un
+ * Client Component avec un formulaire à pré-remplir (Planning, Accueil
+ * pro). `addHref` (simple chaîne, donc utilisable depuis un Server
+ * Component) sert d'alternative pour un simple lien de navigation avec
+ * la date en query param — cas de l'Accueil famille, qui n'a pas de
+ * formulaire inline.
  */
-export function RelaisCalendar({ visits, onAddDay }: { visits: VisitLite[]; onAddDay?: (date: Date) => void }) {
+export function RelaisCalendar({ visits, onAddDay, addHref }: {
+  visits: VisitLite[];
+  onAddDay?: (date: Date) => void;
+  addHref?: string;
+}) {
+  const router = useRouter();
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthView, setMonthView] = useState<Date | null>(null);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
@@ -93,8 +108,9 @@ export function RelaisCalendar({ visits, onAddDay }: { visits: VisitLite[]; onAd
           {days.map((d, i) => (
             <button key={i}
               onClick={() => {
-                if (!d.name && onAddDay) onAddDay(d.date);
-                else setMonthView(new Date(d.date.getFullYear(), d.date.getMonth(), 1));
+                if (!d.name && onAddDay) { onAddDay(d.date); return; }
+                if (!d.name && addHref) { router.push(`${addHref}?date=${dateKey(d.date)}`); return; }
+                setMonthView(new Date(d.date.getFullYear(), d.date.getMonth(), 1));
               }}
               onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)}
               style={{
