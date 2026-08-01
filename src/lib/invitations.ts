@@ -42,10 +42,9 @@ export async function acceptInvitation(token: string): Promise<AcceptResult> {
     const isProfessional = invite.role === "professional";
     // Un professionnel ne reçoit jamais le rappel de visite (il ne participe
     // pas au planning familial) ni l'alerte de médicament non pris (réservée
-    // à la famille). Seuls médecin traitant/chirurgien reçoivent le rappel
-    // d'ordonnance à renouveler, puisqu'ils sont les seuls à pouvoir la
+    // à la famille). Toutes les catégories professionnelles peuvent gérer le
+    // traitement (voir health.ts) et reçoivent donc le rappel d'ordonnance à
     // renouveler. Non modifiable ensuite (voir circle.ts).
-    const isPrescribing = ["medecin_traitant", "chirurgien"].includes(invite.profession_category ?? "");
     const { error: memErr } = await admin.from("family_members").insert({
       family_id: invite.family_id,
       user_id: user.id,
@@ -54,7 +53,7 @@ export async function acceptInvitation(token: string): Promise<AcceptResult> {
       profession_detail: isProfessional ? invite.profession_detail : null,
       authorized_parent_ids: isProfessional ? invite.authorized_parent_ids : null,
       ...(isProfessional
-        ? { notify_rx_expiry: isPrescribing, notify_visit_reminder: false, notify_overdue_doses: false }
+        ? { notify_rx_expiry: true, notify_visit_reminder: false, notify_overdue_doses: false }
         : {}),
     });
     if (memErr) return { ok: false, error: memErr.message };

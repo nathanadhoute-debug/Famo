@@ -10,9 +10,6 @@ const MAX_SIZE = 15 * 1024 * 1024; // 15 Mo
 // Un professionnel n'a aucune visibilité sur les catégories personnelles
 // (identité, assurance...) — seulement les pièces à caractère médical.
 const PROFESSIONAL_CATEGORIES = ["Ordonnance", "Analyse", "Compte-rendu"];
-// Ajouter une ordonnance, comme modifier le traitement, est réservé aux
-// catégories habilitées à prescrire (voir PRESCRIBING_CATEGORIES dans health.ts).
-const PRESCRIBING_CATEGORIES = ["medecin_traitant", "chirurgien"];
 
 /** Téléverse un document dans le coffre-fort (storage + table documents). */
 export async function uploadDocument(formData: FormData): Promise<ActionResult> {
@@ -27,14 +24,9 @@ export async function uploadDocument(formData: FormData): Promise<ActionResult> 
   if (file.size > MAX_SIZE) return { ok: false, error: "Fichier trop volumineux (max 15 Mo)." };
 
   try {
-    const { userId, role, professionCategory } = await requireMembership(familyId, { allowProfessional: true });
-    if (role === "professional") {
-      if (!PROFESSIONAL_CATEGORIES.includes(category)) {
-        return { ok: false, error: "Catégorie non autorisée pour un professionnel." };
-      }
-      if (category === "Ordonnance" && !PRESCRIBING_CATEGORIES.includes(professionCategory ?? "")) {
-        return { ok: false, error: "Seuls le médecin traitant et le chirurgien peuvent ajouter une ordonnance." };
-      }
+    const { userId, role } = await requireMembership(familyId, { allowProfessional: true });
+    if (role === "professional" && !PROFESSIONAL_CATEGORIES.includes(category)) {
+      return { ok: false, error: "Catégorie non autorisée pour un professionnel." };
     }
     const admin = createAdminClient();
 
@@ -74,11 +66,18 @@ export async function getDocumentUrl(documentId: string): Promise<{ ok: true; ur
   try {
     const admin = createAdminClient();
     const { data: doc } = await admin
-      .from("documents").select("family_id, file_url, category").eq("id", documentId).maybeSingle();
+      .from("documents").select("family_id, file_url, category, uploaded_by").eq("id", documentId).maybeSingle();
     if (!doc) return { ok: false, error: "Document introuvable." };
-    const { role } = await requireMembership(doc.family_id, { allowProfessional: true });
-    if (role === "professional" && !PROFESSIONAL_CATEGORIES.includes(doc.category)) {
-      return { ok: false, error: "Document non accessible pour un professionnel." };
+    const { userId, role } = await requireMembership(doc.family_id, { allowProfessional: true });
+    if (role === "professional") {
+      if (!PROFESSIONAL_CATEGORIES.includes(doc.category)) {
+        return { ok: false, error: "Document non accessible pour un professionnel." };
+      }
+      // Un professionnel ne voit que les documents qu'il a lui-même déposés,
+      // jamais ceux d'un autre professionnel (la famille/admin voit tout).
+      if (doc.uploaded_by !== userId) {
+        return { ok: false, error: "Vous n'avez accès qu'à vos propres documents." };
+      }
     }
 
     const { data, error } = await admin.storage.from(BUCKET).createSignedUrl(doc.file_url, 60);

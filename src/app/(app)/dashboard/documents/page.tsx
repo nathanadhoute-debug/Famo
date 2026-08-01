@@ -12,14 +12,18 @@ export default async function DocumentsPage() {
   const supabase = await createClient();
 
   // Un professionnel ne voit que les pièces à caractère médical — jamais
-  // les papiers personnels (identité, assurance...).
+  // les papiers personnels (identité, assurance...) — et seulement celles
+  // qu'il a lui-même déposées, jamais celles d'un autre professionnel. La
+  // famille/admin continue de tout voir, y compris tous les dépôts des pros.
   const isProfessional = ctx.role === "professional";
   let docsQuery = supabase
     .from("documents")
     .select("id, label, category, file_size, mime_type, created_at, uploaded_by")
     .eq("family_id", ctx.family.id)
     .eq("parent_id", ctx.parent?.id ?? "");
-  if (isProfessional) docsQuery = docsQuery.in("category", ["Ordonnance", "Analyse", "Compte-rendu"]);
+  if (isProfessional) {
+    docsQuery = docsQuery.in("category", ["Ordonnance", "Analyse", "Compte-rendu"]).eq("uploaded_by", ctx.user.id);
+  }
   const [{ data: docs }, members] = await Promise.all([
     docsQuery.order("created_at", { ascending: false }),
     getFamilyMembers(ctx.family.id),
@@ -37,7 +41,7 @@ export default async function DocumentsPage() {
         title="Le coffre-fort du cercle"
         subtitle="Ordonnances, analyses, papiers importants"
       />
-      <DocumentsManager initial={docsWithAuthor} familyId={ctx.family.id} parentId={ctx.parent?.id ?? null} role={ctx.role} professionCategory={ctx.professionCategory} />
+      <DocumentsManager initial={docsWithAuthor} familyId={ctx.family.id} parentId={ctx.parent?.id ?? null} role={ctx.role} />
     </div>
   );
 }

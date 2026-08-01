@@ -81,7 +81,7 @@ export default function ConfidentialitePage() {
         <h1 style={{ fontFamily: font.display, fontSize: 34, color: c.sage900, margin: "8px 0 6px", fontWeight: 500 }}>
           Politique de confidentialité
         </h1>
-        <p style={{ fontSize: 14, color: c.sub, margin: "0 0 8px" }}>Dernière mise à jour : 31 juillet 2026</p>
+        <p style={{ fontSize: 14, color: c.sub, margin: "0 0 8px" }}>Dernière mise à jour : 1er août 2026</p>
 
         <H2>1. Préambule</H2>
         <P>
@@ -205,15 +205,20 @@ export default function ConfidentialitePage() {
         </P>
         <P>
           L&apos;accès d&apos;un professionnel de santé invité est volontairement restreint : constantes de santé,
-          traitement médicamenteux (avec possibilité de confirmer une prise), ses propres notes de journal
-          (à l&apos;exclusion de celles rédigées par les membres de la famille), et les documents à caractère
-          médical (ordonnances, analyses, comptes-rendus, à l&apos;exclusion des documents personnels tels que
-          pièces d&apos;identité ou attestations d&apos;assurance). Il n&apos;a pas accès au planning des visites
-          familiales, à la liste des membres du cercle, ni à l&apos;administration du cercle. Seules les catégories
-          médecin traitant et chirurgien peuvent modifier le traitement médicamenteux ou ajouter une ordonnance ;
-          les autres catégories professionnelles disposent d&apos;un accès en consultation et peuvent confirmer
-          qu&apos;une prise a été administrée. Toute modification du traitement par un professionnel de santé est
-          horodatée et associée à son identité.
+          traitement médicamenteux (ajout, modification, confirmation de prise), ses propres notes de journal
+          (à l&apos;exclusion de celles rédigées par les membres de la famille ou par un autre professionnel), et
+          les documents à caractère médical (ordonnances, analyses, comptes-rendus, à l&apos;exclusion des documents
+          personnels tels que pièces d&apos;identité ou attestations d&apos;assurance). Toutes les catégories
+          professionnelles disposent des mêmes droits sur le traitement médicamenteux et les ordonnances. Il n&apos;a
+          pas accès au planning des visites familiales, à la liste des membres du cercle, ni à l&apos;administration
+          du cercle. Toute modification du traitement par un professionnel de santé est horodatée et associée à
+          son identité.
+        </P>
+        <P>
+          Un professionnel de santé ne voit que les documents médicaux (ordonnances, analyses, comptes-rendus)
+          qu&apos;il a lui-même déposés — jamais ceux déposés par un autre professionnel invité dans le même cercle.
+          La famille et les administrateurs du cercle conservent quant à eux une visibilité complète sur l&apos;ensemble
+          des documents médicaux, y compris ceux déposés par tout professionnel de santé invité.
         </P>
         <P>
           Un même professionnel de santé peut être invité, avec un seul et même compte, par plusieurs cercles

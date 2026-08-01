@@ -59,8 +59,6 @@ export async function deleteVital(vitalId: string): Promise<ActionResult> {
   }
 }
 
-const PRESCRIBING_CATEGORIES = ["medecin_traitant", "chirurgien"];
-
 /** Ajoute un médicament, avec ses horaires de prise éventuels. */
 export async function addMedication(input: {
   familyId: string;
@@ -77,10 +75,7 @@ export async function addMedication(input: {
     return { ok: false, error: "Indiquez un nom et une dose." };
   }
   try {
-    const { userId, role, professionCategory } = await requireMembership(input.familyId, { allowProfessional: true });
-    if (role === "professional" && !PRESCRIBING_CATEGORIES.includes(professionCategory ?? "")) {
-      return { ok: false, error: "Seuls le médecin traitant et le chirurgien peuvent modifier le traitement." };
-    }
+    const { userId } = await requireMembership(input.familyId, { allowProfessional: true });
     const admin = createAdminClient();
     const { data: med, error } = await admin
       .from("medications")
@@ -122,10 +117,7 @@ export async function deactivateMedication(medicationId: string): Promise<Action
     const admin = createAdminClient();
     const { data: med } = await admin.from("medications").select("family_id").eq("id", medicationId).maybeSingle();
     if (!med) return { ok: false, error: "Médicament introuvable." };
-    const { userId, role, professionCategory } = await requireMembership(med.family_id, { allowProfessional: true });
-    if (role === "professional" && !PRESCRIBING_CATEGORIES.includes(professionCategory ?? "")) {
-      return { ok: false, error: "Seuls le médecin traitant et le chirurgien peuvent modifier le traitement." };
-    }
+    const { userId } = await requireMembership(med.family_id, { allowProfessional: true });
     const { error } = await admin.from("medications").update({
       active: false,
       modified_by: userId,

@@ -107,11 +107,11 @@ export function ProfessionalHome({
       <section>
         <Eyebrow>Journal</Eyebrow>
         {lastEntry ? (
-          <div style={{ marginTop: 14 }}>
-            <p style={{ fontFamily: font.display, fontStyle: "italic", fontSize: 21, fontWeight: 400, lineHeight: 1.55, color: c.sage900, margin: 0 }}>
-              «&nbsp;{lastEntry.content}&nbsp;»
+          <div style={{ marginTop: 14, borderLeft: `2px solid ${c.sage700}`, paddingLeft: 16 }}>
+            <p style={{ fontFamily: font.display, fontSize: 20, fontWeight: 400, lineHeight: 1.55, color: c.sage900, margin: 0 }}>
+              {lastEntry.content}
             </p>
-            <p style={{ fontSize: 12.5, color: c.eyebrow, margin: "12px 0 0" }}>
+            <p style={{ fontSize: 12.5, color: c.eyebrow, margin: "10px 0 0" }}>
               {lastEntry.authorName} · {timeAgo(lastEntry.created_at)}
             </p>
           </div>

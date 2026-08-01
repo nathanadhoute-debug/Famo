@@ -119,8 +119,8 @@ export function JournalManager({ initial, familyId, parentId, currentUserId, isA
             const canDelete = e.author_id === currentUserId || isAdmin;
             return (
               <div key={e.id} style={{ borderLeft: `2px solid ${i === 0 ? c.sage700 : c.hairline}`, paddingLeft: 18, opacity: i === 0 ? 1 : 0.6 }}>
-                <p style={{ fontFamily: font.display, fontStyle: "italic", fontSize: 20, fontWeight: 400, lineHeight: 1.55, color: c.sage900, margin: 0 }}>
-                  «&nbsp;{e.content}&nbsp;»
+                <p style={{ fontFamily: font.display, fontSize: 19, fontWeight: 400, lineHeight: 1.55, color: c.sage900, margin: 0 }}>
+                  {e.content}
                 </p>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
                   <span style={{ fontSize: 12.5, color: c.eyebrow }}>

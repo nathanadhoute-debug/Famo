@@ -31,8 +31,6 @@ const PROFESSION_LABEL: Record<string, string> = {
   medecin_traitant: "Médecin traitant", chirurgien: "Chirurgien", autre: "Autre",
 };
 
-const PRESCRIBING_CATEGORIES = ["medecin_traitant", "chirurgien"];
-
 export function MedicationsManager({ initial, familyId, parentId, role, professionCategory }: {
   initial: Medication[];
   familyId: string;
@@ -48,7 +46,6 @@ export function MedicationsManager({ initial, familyId, parentId, role, professi
   const [pending, start] = useTransition();
 
   const isProfessional = role === "professional";
-  const canManageMeds = !isProfessional || PRESCRIBING_CATEGORIES.includes(professionCategory ?? "");
   const signatureLabel = professionCategory ? (PROFESSION_LABEL[professionCategory] ?? professionCategory) : "professionnel";
 
   const submit = () => {
@@ -109,42 +106,31 @@ export function MedicationsManager({ initial, familyId, parentId, role, professi
                   </p>
                 )}
               </div>
-              {canManageMeds && (
-                <button onClick={() => deactivate(m.id)} disabled={pending} aria-label="Désactiver"
-                  style={{ background: "transparent", border: "none", cursor: "pointer", color: c.eyebrow, display: "flex", padding: 4 }}>
-                  <Icon name="x" size={17} />
-                </button>
-              )}
+              <button onClick={() => deactivate(m.id)} disabled={pending} aria-label="Désactiver"
+                style={{ background: "transparent", border: "none", cursor: "pointer", color: c.eyebrow, display: "flex", padding: 4 }}>
+                <Icon name="x" size={17} />
+              </button>
             </div>
           ))}
         </div>
       ) : (
         <p style={{ fontSize: 15, color: c.sub, lineHeight: 1.6, padding: "8px 0 20px" }}>
-          {canManageMeds ? "Aucun médicament suivi. Ajoutez-en un ci-dessous." : "Aucun médicament suivi pour l'instant."}
+          Aucun médicament suivi. Ajoutez-en un ci-dessous.
         </p>
       )}
 
       <Hairline margin="26px 0" />
 
-      {!canManageMeds ? (
-        <div>
-          <Eyebrow>Nouveau médicament</Eyebrow>
-          <p style={{ fontSize: 13.5, color: c.sub, margin: "10px 0 0", lineHeight: 1.6 }}>
-            Seuls le médecin traitant et le chirurgien peuvent modifier le traitement.
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Eyebrow>Nouveau médicament</Eyebrow>
-          {!open && (
-            <button onClick={() => setOpen(true)} className="btn" style={{ background: c.sage900, color: "#F4F2EC", padding: "8px 15px", fontSize: 13, borderRadius: 9 }}>
-              <Icon name="plus" size={15} /> Ajouter
-            </button>
-          )}
-        </div>
-      )}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Eyebrow>Nouveau médicament</Eyebrow>
+        {!open && (
+          <button onClick={() => setOpen(true)} className="btn" style={{ background: c.sage900, color: "#F4F2EC", padding: "8px 15px", fontSize: 13, borderRadius: 9 }}>
+            <Icon name="plus" size={15} /> Ajouter
+          </button>
+        )}
+      </div>
 
-      {canManageMeds && open && (
+      {open && (
         <div style={{ marginTop: 18 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 10 }}>
             <div>
