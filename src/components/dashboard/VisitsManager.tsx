@@ -24,18 +24,25 @@ export function VisitsManager({ initial, members, familyId, parentId, currentUse
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
+  const [highlightId, setHighlightId] = useState<string | null>(null);
 
   const nameFor = (id: string | null) =>
     id ? (id === currentUserId ? "Vous" : members.find((m) => m.userId === id)?.name ?? "Membre") : "Visite";
 
-  // Arrivée depuis le "+" d'un jour sur l'Accueil (RelaisCalendar y navigue
-  // vers /dashboard/relais?date=YYYY-MM-DD, faute de formulaire sur place) :
-  // ouvre directement le formulaire pré-rempli sur cette date. Lecture
-  // manuelle de l'URL (pas useSearchParams) pour éviter d'imposer un
+  // Arrivée depuis un jour du RelaisCalendar sur l'Accueil (navigue vers
+  // /dashboard/relais?date=YYYY-MM-DD, faute de formulaire sur place) : si ce
+  // jour a déjà une visite, on la met en évidence dans la liste plutôt que
+  // rouvrir le formulaire d'ajout ; sinon ouvre le formulaire pré-rempli.
+  // Lecture manuelle de l'URL (pas useSearchParams) pour éviter d'imposer un
   // Suspense boundary à toute la page pour ce seul cas d'usage.
   useEffect(() => {
     const dateParam = new URLSearchParams(window.location.search).get("date");
-    if (dateParam) {
+    if (!dateParam) return;
+    const existing = initial.find((v) => parisDateKey(new Date(v.visit_date)) === dateParam);
+    if (existing) {
+      setHighlightId(existing.id);
+      requestAnimationFrame(() => document.getElementById(`visit-${existing.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    } else {
       setForm((f) => ({ ...f, date: `${dateParam}T09:00` }));
       setOpen(true);
     }
@@ -122,13 +129,13 @@ export function VisitsManager({ initial, members, familyId, parentId, currentUse
       )}
       {error && !open && <p style={{ color: c.danger, fontSize: 13.5, marginTop: 12 }}>{error}</p>}
 
-      <VisitList title="À venir" visits={upcoming} nameFor={nameFor} remove={remove} pending={pending} empty="Aucune visite à venir." />
-      {past.length > 0 && <VisitList title="Passées" visits={past} nameFor={nameFor} remove={remove} pending={pending} muted />}
+      <VisitList title="À venir" visits={upcoming} nameFor={nameFor} remove={remove} pending={pending} empty="Aucune visite à venir." highlightId={highlightId} />
+      {past.length > 0 && <VisitList title="Passées" visits={past} nameFor={nameFor} remove={remove} pending={pending} muted highlightId={highlightId} />}
     </div>
   );
 }
 
-function VisitList({ title, visits, nameFor, remove, pending, empty, muted }: {
+function VisitList({ title, visits, nameFor, remove, pending, empty, muted, highlightId }: {
   title: string;
   visits: Visit[];
   nameFor: (id: string | null) => string;
@@ -136,6 +143,7 @@ function VisitList({ title, visits, nameFor, remove, pending, empty, muted }: {
   pending: boolean;
   empty?: string;
   muted?: boolean;
+  highlightId?: string | null;
 }) {
   return (
     <div style={{ marginTop: 28, opacity: muted ? 0.62 : 1 }}>
@@ -146,8 +154,15 @@ function VisitList({ title, visits, nameFor, remove, pending, empty, muted }: {
         <div style={{ marginTop: 6 }}>
           {visits.map((v) => {
             const d = new Date(v.visit_date);
+            const highlighted = v.id === highlightId;
             return (
-              <div key={v.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderTop: `1px solid ${c.hairline}` }}>
+              <div key={v.id} id={`visit-${v.id}`} style={{
+                display: "flex", alignItems: "center", gap: 14, padding: "14px 10px", margin: "0 -10px",
+                borderTop: `1px solid ${c.hairline}`, borderRadius: 10,
+                background: highlighted ? c.sage050 : "transparent",
+                boxShadow: highlighted ? `inset 3px 0 0 ${c.terracotta}` : "none",
+                transition: "background .3s ease",
+              }}>
                 <div style={{ width: 46, flexShrink: 0, textAlign: "center" }}>
                   <div style={{ fontSize: 11, color: c.eyebrow, textTransform: "uppercase" }}>{d.toLocaleDateString("fr-FR", { month: "short", timeZone: "Europe/Paris" })}</div>
                   <div style={{ fontFamily: font.display, fontSize: 20, fontWeight: 400, color: c.sage900, lineHeight: 1.1 }}>{Number(parisDateKey(d).slice(8))}</div>

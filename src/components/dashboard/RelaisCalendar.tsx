@@ -118,7 +118,11 @@ export function RelaisCalendar({ visits, onAddDay, addHref }: {
           {days.map((d, i) => (
             <button key={i}
               onClick={() => {
-                if (!d.name && handleEmptyDayClick) { handleEmptyDayClick(d.date); return; }
+                if (d.name) {
+                  if (addHref) { router.push(`${addHref}?date=${dateKey(d.date)}`); return; }
+                } else if (handleEmptyDayClick) {
+                  handleEmptyDayClick(d.date); return;
+                }
                 setMonthView(new Date(d.date.getFullYear(), d.date.getMonth(), 1));
               }}
               onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)}

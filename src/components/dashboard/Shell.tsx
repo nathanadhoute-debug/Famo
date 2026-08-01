@@ -47,6 +47,7 @@ export function Shell({
             key={item.href}
             href={item.href}
             onClick={() => setOpen(false)}
+            className={active ? undefined : "dash-nav-link"}
             style={{
               display: "flex", alignItems: "center", gap: 12,
               padding: "11px 14px", borderRadius: 12,
@@ -76,7 +77,7 @@ export function Shell({
       </div>
       {nav}
       <div style={{ marginTop: "auto" }}>
-        <Link href="/dashboard/reglages" onClick={() => setOpen(false)}
+        <Link href="/dashboard/reglages" onClick={() => setOpen(false)} className="dash-nav-link"
           style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 8px", borderRadius: 12 }}>
           <span style={{
             width: 34, height: 34, borderRadius: 999, background: "rgba(255,255,255,.16)", color: "#fff",
@@ -91,6 +92,7 @@ export function Shell({
   return (
     <div style={{ minHeight: "100vh", background: c.creamPage }}>
       <style>{`
+        .dash-nav-link:hover { background: rgba(255,255,255,.1); color: #fff; }
         .dash-sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 250px;
           background: ${c.sage900}; z-index: 40; }
         .dash-main { margin-left: 250px; min-height: 100vh; }
