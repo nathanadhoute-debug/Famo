@@ -52,6 +52,7 @@ export function DateTimePicker({ value, onChange, mode = "datetime", placeholder
   const ref = useRef<HTMLDivElement>(null);
   const parsed = parseValue(value);
   const [viewMonth, setViewMonth] = useState(() => parsed.date ?? new Date());
+  const [hoverDay, setHoverDay] = useState<number | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -132,15 +133,18 @@ export function DateTimePicker({ value, onChange, mode = "datetime", placeholder
                 const inMonth = d.getMonth() === viewMonth.getMonth();
                 const isToday = sameDay(d, now);
                 const isSelected = parsed.date ? sameDay(d, parsed.date) : false;
+                const hovered = hoverDay === i;
                 return (
                   <button key={i} type="button" onClick={() => selectDay(d)}
+                    onMouseEnter={() => setHoverDay(i)} onMouseLeave={() => setHoverDay(null)}
                     style={{
                       width: 30, height: 30, borderRadius: "50%", border: "none", cursor: "pointer",
                       fontSize: 12.5, fontFamily: font.body,
-                      background: isSelected ? c.sage900 : "transparent",
+                      background: isSelected ? c.sage900 : hovered ? c.sage050 : "transparent",
                       color: isSelected ? "#F4F2EC" : inMonth ? c.ink : "#C7BFA6",
-                      outline: !isSelected && isToday ? `1.5px solid ${c.terracotta}` : "none",
+                      outline: !isSelected && isToday ? `1.5px solid ${c.terracotta}` : !isSelected && hovered ? `1.5px solid ${c.sage700}` : "none",
                       opacity: inMonth ? 1 : 0.55,
+                      transition: "background .1s ease",
                     }}>
                     {d.getDate()}
                   </button>
@@ -166,17 +170,31 @@ export function ScrollColumn({ count, selected, onSelect }: {
   selected: number | null;
   onSelect: (n: number) => void;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState<number | null>(null);
+
+  // Centre automatiquement la valeur déjà choisie (ou 0 par défaut) au
+  // montage, pour ne pas laisser l'utilisateur défiler à l'aveugle pour
+  // retrouver l'heure actuelle.
+  useEffect(() => {
+    const target = containerRef.current?.children[selected ?? 0] as HTMLElement | undefined;
+    target?.scrollIntoView({ block: "center" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <div style={{
+    <div ref={containerRef} style={{
       width: 44, height: 220, overflowY: "auto", border: `1px solid ${c.hairline}`, borderRadius: 8,
     }}>
       {Array.from({ length: count }, (_, n) => n).map((n) => (
         <button key={n} type="button" onClick={() => onSelect(n)}
+          onMouseEnter={() => setHover(n)} onMouseLeave={() => setHover(null)}
           style={{
             display: "block", width: "100%", padding: "6px 0", border: "none", cursor: "pointer",
             fontSize: 13, fontFamily: font.body, textAlign: "center",
-            background: selected === n ? c.sage900 : "transparent",
+            background: selected === n ? c.sage900 : hover === n ? c.sage050 : "transparent",
             color: selected === n ? "#F4F2EC" : c.ink,
+            transition: "background .1s ease",
           }}>
           {pad(n)}
         </button>

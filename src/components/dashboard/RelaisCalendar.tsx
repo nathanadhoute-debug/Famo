@@ -23,6 +23,7 @@ type VisitLite = { visit_date: string; visitorName: string | null };
 export function RelaisCalendar({ visits }: { visits: VisitLite[] }) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthView, setMonthView] = useState<Date | null>(null);
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   const now = new Date();
   const monday = new Date(mondayOf(now));
@@ -51,15 +52,26 @@ export function RelaisCalendar({ visits }: { visits: VisitLite[] }) {
     setMonthView(null);
   };
 
+  // Libellé du mois affiché au-dessus de la frise — une semaine peut chevaucher
+  // deux mois (ex. 27 juillet → 2 août), sinon un seul suffit.
+  const firstDay = days[0].date;
+  const lastDay = days[6].date;
+  const monthLabel = firstDay.getMonth() === lastDay.getMonth()
+    ? `${MONTHS[firstDay.getMonth()]} ${firstDay.getFullYear()}`
+    : `${MONTHS[firstDay.getMonth()]} – ${MONTHS[lastDay.getMonth()]} ${lastDay.getFullYear()}`;
+
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4, marginBottom: 6 }}>
-        <button aria-label="Semaine précédente" onClick={() => setWeekOffset((w) => w - 1)} style={arrowStyle}>
-          <Icon name="chevron-left" size={16} />
-        </button>
-        <button aria-label="Semaine suivante" onClick={() => setWeekOffset((w) => w + 1)} style={arrowStyle}>
-          <Icon name="chevron-right" size={16} />
-        </button>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 4, marginBottom: 6 }}>
+        <span style={{ fontSize: 12.5, color: c.sub, fontFamily: font.body }}>{monthLabel}</span>
+        <div style={{ display: "flex", gap: 4 }}>
+          <button aria-label="Semaine précédente" onClick={() => setWeekOffset((w) => w - 1)} style={arrowStyle}>
+            <Icon name="chevron-left" size={16} />
+          </button>
+          <button aria-label="Semaine suivante" onClick={() => setWeekOffset((w) => w + 1)} style={arrowStyle}>
+            <Icon name="chevron-right" size={16} />
+          </button>
+        </div>
       </div>
 
       <div style={{ position: "relative", padding: "4px 0 6px" }}>
@@ -75,15 +87,21 @@ export function RelaisCalendar({ visits }: { visits: VisitLite[] }) {
         <div style={{ position: "relative", display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
           {days.map((d, i) => (
             <button key={i} onClick={() => setMonthView(new Date(d.date.getFullYear(), d.date.getMonth(), 1))}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 9 }}>
+              onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)}
+              style={{
+                background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 12,
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 9,
+                transform: hoverIdx === i ? "scale(1.06)" : "scale(1)", transition: "transform .12s ease",
+              }}>
               {d.name ? (
-                <Avatar name={d.name} size={40} bg={d.isToday ? c.terracotta : c.sage700} ring={d.isToday ? c.terracotta : undefined} />
+                <Avatar name={d.name} size={40} bg={d.isToday ? c.terracotta : c.sage700} ring={d.isToday || hoverIdx === i ? c.terracotta : undefined} />
               ) : (
                 <span style={{
-                  width: 40, height: 40, borderRadius: "50%", background: c.creamPage,
-                  border: `1.5px dashed ${d.isToday ? c.terracotta : "#E1DAC4"}`,
+                  width: 40, height: 40, borderRadius: "50%",
+                  background: hoverIdx === i ? c.sage050 : c.creamPage,
+                  border: `1.5px dashed ${d.isToday ? c.terracotta : hoverIdx === i ? c.sage700 : "#E1DAC4"}`,
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  color: d.isToday ? c.terracotta : "#C7BFA6",
+                  color: d.isToday ? c.terracotta : hoverIdx === i ? c.sage700 : "#C7BFA6",
                 }}>
                   <Icon name="plus" size={14} />
                 </span>
@@ -128,6 +146,7 @@ function MonthOverlay({ month, visits, onClose, onChangeMonth, onSelectDay }: {
   const now = new Date();
   const grid = monthGrid(month);
   const shift = (delta: number) => onChangeMonth(new Date(month.getFullYear(), month.getMonth() + delta, 1));
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   return (
     <div onClick={onClose} style={{
@@ -162,15 +181,18 @@ function MonthOverlay({ month, visits, onClose, onChangeMonth, onSelectDay }: {
             const inMonth = d.getMonth() === month.getMonth();
             const isToday = parisDateKey(d) === parisDateKey(now);
             const v = visits.find((x) => parisDateKey(new Date(x.visit_date)) === parisDateKey(d));
-            const bg = v ? (isToday ? c.terracotta : c.sage700) : "transparent";
+            const hovered = hoverIdx === i;
+            const bg = v ? (isToday ? c.terracotta : c.sage700) : hovered ? c.sage050 : "transparent";
             return (
               <button key={i} onClick={() => onSelectDay(d)}
+                onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)}
                 style={{ background: "none", border: "none", cursor: "pointer", padding: "3px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                 <span style={{
                   width: 28, height: 28, borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center",
                   fontSize: 12.5, fontFamily: font.body, background: bg, color: v ? "#F4F2EC" : inMonth ? c.sage900 : "#C7BFA6",
-                  border: !v && isToday ? `1.5px solid ${c.terracotta}` : "none",
+                  border: !v && isToday ? `1.5px solid ${c.terracotta}` : !v && hovered ? `1.5px solid ${c.sage700}` : "none",
                   opacity: inMonth ? 1 : 0.5,
+                  transition: "background .1s ease",
                 }}>
                   {d.getDate()}
                 </span>
