@@ -9,6 +9,12 @@ export const metadata = { title: "Relais — Famō" };
 export default async function RelaisPage() {
   const ctx = await getCurrentFamily();
   if (!ctx) redirect("/onboarding");
+  // Un professionnel n'a pas accès au planning familial complet (seulement
+  // à ses propres passages, gérés depuis son Accueil) — cette page n'était
+  // jusqu'ici protégée que par l'absence de lien dans la navigation, pas
+  // par une vérification serveur, contrairement à Réglages (corrigé le
+  // 26/07 pour la même raison). Accessible en tapant l'URL directement.
+  if (ctx.role === "professional") redirect("/dashboard");
   const supabase = await createClient();
 
   const [{ data: visits }, memberList] = await Promise.all([
