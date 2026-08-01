@@ -21,6 +21,15 @@ export default async function DashboardHome() {
   const now = new Date();
   const parentId = ctx.parent?.id ?? "";
 
+  // Un professionnel ne doit voir que ses propres notes de journal (comme sur
+  // la page Journal complète), jamais celles de la famille — cette requête
+  // alimentant aussi l'aperçu "Journal" de l'Accueil professionnel, le filtre
+  // doit s'appliquer ici aussi, pas seulement sur journal/page.tsx.
+  let journalQuery = supabase.from("journal_entries").select("content, tags, author_id, created_at")
+    .eq("family_id", ctx.family.id).eq("parent_id", parentId);
+  if (ctx.role === "professional") journalQuery = journalQuery.eq("author_id", ctx.user.id);
+  journalQuery = journalQuery.order("created_at", { ascending: false }).limit(1);
+
   const [members, { data: dosesRaw }, { data: visitsRaw }, { data: vitalsRaw }, { data: journalRaw }] =
     await Promise.all([
       getFamilyMembers(ctx.family.id),
@@ -32,8 +41,7 @@ export default async function DashboardHome() {
         .order("visit_date", { ascending: true }),
       supabase.from("vitals").select("label, value, unit, recorded_at")
         .eq("family_id", ctx.family.id).eq("parent_id", parentId).order("recorded_at", { ascending: false }).limit(40),
-      supabase.from("journal_entries").select("content, tags, author_id, created_at")
-        .eq("family_id", ctx.family.id).eq("parent_id", parentId).order("created_at", { ascending: false }).limit(1),
+      journalQuery,
     ]);
 
   const nameById = (id: string | null) =>
