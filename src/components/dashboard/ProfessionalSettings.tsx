@@ -1,12 +1,12 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { c } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline } from "@/components/dashboard/editorial";
 import { ProfileSection } from "@/components/dashboard/SettingsManager";
 import { leaveFamily } from "@/lib/actions/circle";
+import { signOutAction } from "@/lib/actions/auth";
 
 /**
  * Réglages d'un professionnel invité : son profil, quitter le cercle et la
@@ -16,7 +16,6 @@ import { leaveFamily } from "@/lib/actions/circle";
  */
 export function ProfessionalSettings({ profileName, userEmail, family }: { profileName: string; userEmail: string; family: { id: string; name: string } }) {
   const router = useRouter();
-  const supabase = createClient();
   const [err, setErr] = useState("");
   const [pending, start] = useTransition();
 
@@ -47,7 +46,7 @@ export function ProfessionalSettings({ profileName, userEmail, family }: { profi
           <Eyebrow>Session</Eyebrow>
           <p style={{ fontSize: 13.5, color: c.sub, marginTop: 6 }}>Connecté·e en tant que {userEmail}</p>
         </div>
-        <button className="btn" onClick={async () => { await supabase.auth.signOut(); router.push("/login"); router.refresh(); }}
+        <button className="btn" onClick={() => signOutAction()}
           style={{ background: "transparent", color: c.danger, border: `1px solid ${c.hairline}`, borderRadius: 9, padding: "9px 16px" }}>
           <Icon name="logout" size={16} /> Se déconnecter
         </button>

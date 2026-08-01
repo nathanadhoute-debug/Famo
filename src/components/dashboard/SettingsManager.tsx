@@ -1,12 +1,12 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { c } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline, Avatar } from "@/components/dashboard/editorial";
 import { updateProfile, renameFamily, removeMember, cancelInvite, updateNotificationPrefs, addAnotherParent, removeParent, leaveFamily, updateProfessionalAccess } from "@/lib/actions/circle";
 import { createInvite } from "@/lib/actions/invites";
+import { signOutAction } from "@/lib/actions/auth";
 
 type Member = { userId: string; name: string; role: string; professionCategory?: string | null; professionDetail?: string | null; authorizedParentIds?: string[] | null };
 type Invite = { id: string; email: string; role: string; professionCategory?: string | null };
@@ -32,9 +32,6 @@ export function SettingsManager({
   notificationPrefs: NotificationPrefs;
   parents: Parent[];
 }) {
-  const router = useRouter();
-  const supabase = createClient();
-
   return (
     <div>
       <ProfileSection initial={profileName} email={userEmail} />
@@ -53,7 +50,7 @@ export function SettingsManager({
           <Eyebrow>Session</Eyebrow>
           <p style={{ fontSize: 13.5, color: c.sub, marginTop: 6 }}>Connecté·e en tant que {userEmail}</p>
         </div>
-        <button className="btn" onClick={async () => { await supabase.auth.signOut(); router.push("/login"); router.refresh(); }}
+        <button className="btn" onClick={() => signOutAction()}
           style={{ background: "transparent", color: c.danger, border: `1px solid ${c.hairline}`, borderRadius: 9, padding: "9px 16px" }}>
           <Icon name="logout" size={16} /> Se déconnecter
         </button>
