@@ -8,6 +8,7 @@ import { createCircle, addParent } from "@/lib/actions/onboarding";
 import { updateParentPhoto } from "@/lib/actions/circle";
 import { createInvite } from "@/lib/actions/invites";
 import { DateTimePicker } from "@/components/DateTimePicker";
+import { convertHeicIfNeeded } from "@/lib/heic";
 
 type Step = "family" | "parent" | "invite";
 const STEPS: Step[] = ["family", "parent", "invite"];
@@ -22,6 +23,7 @@ export default function OnboardingPage() {
   const [birthDate, setBirthDate] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState("");
+  const [convertingPhoto, setConvertingPhoto] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [invitesSent, setInvitesSent] = useState<{ email: string; link: string; emailSent: boolean }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -146,19 +148,28 @@ export default function OnboardingPage() {
                     : <Icon name="camera" size={18} />}
                 </span>
                 <span style={{ fontSize: 13.5, color: c.sage700, fontWeight: 500 }}>
-                  {photoFile ? "Changer la photo" : "Ajouter une photo"}
+                  {convertingPhoto ? "Conversion…" : photoFile ? "Changer la photo" : "Ajouter une photo"}
                 </span>
-                <input type="file" accept="image/*" style={{ display: "none" }}
-                  onChange={(e) => {
+                <input type="file" accept="image/*" disabled={convertingPhoto} style={{ display: "none" }}
+                  onChange={async (e) => {
                     const file = e.target.files?.[0] ?? null;
-                    setPhotoFile(file);
-                    setPhotoPreview(file ? URL.createObjectURL(file) : "");
+                    if (!file) { setPhotoFile(null); setPhotoPreview(""); return; }
+                    setConvertingPhoto(true); setError("");
+                    try {
+                      const converted = await convertHeicIfNeeded(file);
+                      setPhotoFile(converted);
+                      setPhotoPreview(URL.createObjectURL(converted));
+                    } catch {
+                      setError("La conversion de cette photo a échoué — essayez une autre photo.");
+                    } finally {
+                      setConvertingPhoto(false);
+                    }
                   }} />
               </label>
 
               <Actions>
                 <button className="btn btn-ghost" onClick={() => setStep("family")}>← Retour</button>
-                <button className="btn btn-primary" onClick={submitParent} disabled={loading || !parentName.trim()}>
+                <button className="btn btn-primary" onClick={submitParent} disabled={loading || convertingPhoto || !parentName.trim()}>
                   {loading ? "Enregistrement…" : "Continuer →"}
                 </button>
               </Actions>

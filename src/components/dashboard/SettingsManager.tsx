@@ -7,6 +7,7 @@ import { Eyebrow, Hairline, Avatar } from "@/components/dashboard/editorial";
 import { updateProfile, renameFamily, removeMember, cancelInvite, updateNotificationPrefs, addAnotherParent, removeParent, updateParentPhoto, leaveFamily, updateProfessionalAccess } from "@/lib/actions/circle";
 import { createInvite } from "@/lib/actions/invites";
 import { signOutAction } from "@/lib/actions/auth";
+import { convertHeicIfNeeded } from "@/lib/heic";
 
 type Member = { userId: string; name: string; role: string; professionCategory?: string | null; professionDetail?: string | null; authorizedParentIds?: string[] | null };
 type Invite = { id: string; email: string; role: string; professionCategory?: string | null };
@@ -194,9 +195,16 @@ function ParentsSection({ familyId, isAdmin, parents }: { familyId: string; isAd
 
   const uploadPhoto = (parentId: string, file: File) => {
     setErr("");
-    const fd = new FormData();
-    fd.set("file", file);
     start(async () => {
+      let converted: File;
+      try {
+        converted = await convertHeicIfNeeded(file);
+      } catch {
+        setErr("La conversion de cette photo a échoué — essayez une autre photo.");
+        return;
+      }
+      const fd = new FormData();
+      fd.set("file", converted);
       const r = await updateParentPhoto(parentId, fd);
       if (!r.ok) return setErr(r.error);
       router.refresh();
