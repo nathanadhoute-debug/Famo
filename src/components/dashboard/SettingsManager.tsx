@@ -4,15 +4,17 @@ import { useRouter } from "next/navigation";
 import { c } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline, Avatar } from "@/components/dashboard/editorial";
-import { updateProfile, renameFamily, removeMember, cancelInvite, updateNotificationPrefs, addAnotherParent, removeParent, updateParentPhoto, leaveFamily, updateProfessionalAccess } from "@/lib/actions/circle";
+import { updateProfile, renameFamily, removeMember, cancelInvite, updateNotificationPrefs, addAnotherParent, removeParent, updateParentPhoto, updateParentBirthDate, leaveFamily, updateProfessionalAccess } from "@/lib/actions/circle";
 import { createInvite } from "@/lib/actions/invites";
 import { signOutAction } from "@/lib/actions/auth";
 import { convertHeicIfNeeded } from "@/lib/heic";
+import { calculateAge } from "@/lib/format";
+import { DateTimePicker } from "@/components/DateTimePicker";
 
 type Member = { userId: string; name: string; role: string; professionCategory?: string | null; professionDetail?: string | null; authorizedParentIds?: string[] | null };
 type Invite = { id: string; email: string; role: string; professionCategory?: string | null };
 type NotificationPrefs = { rxExpiry: boolean; visitReminder: boolean; overdueDoses: boolean };
-type Parent = { id: string; name: string; photoUrl: string | null };
+type Parent = { id: string; name: string; photoUrl: string | null; birthDate: string | null };
 
 const ROLE_LABEL: Record<string, string> = { admin: "Admin", member: "Membre", readonly: "Lecture seule", professional: "Professionnel" };
 const PROFESSION_LABEL: Record<string, string> = {
@@ -171,6 +173,8 @@ function ParentsSection({ familyId, isAdmin, parents }: { familyId: string; isAd
   const [open, setOpen] = useState(false);
   const [err, setErr] = useState("");
   const [pending, start] = useTransition();
+  const [editingBirthDateId, setEditingBirthDateId] = useState<string | null>(null);
+  const [birthDateInput, setBirthDateInput] = useState("");
 
   const add = () => {
     if (!name.trim()) return;
@@ -206,6 +210,17 @@ function ParentsSection({ familyId, isAdmin, parents }: { familyId: string; isAd
     });
   };
 
+  const saveBirthDate = (parentId: string) => {
+    if (!birthDateInput) return;
+    setErr("");
+    start(async () => {
+      const r = await updateParentBirthDate(parentId, birthDateInput);
+      if (!r.ok) return setErr(r.error);
+      setEditingBirthDateId(null);
+      router.refresh();
+    });
+  };
+
   return (
     <section>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -219,29 +234,64 @@ function ParentsSection({ familyId, isAdmin, parents }: { familyId: string; isAd
 
       <div style={{ marginTop: 8 }}>
         {parents.map((p) => (
-          <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 13, padding: "13px 0", borderBottom: `1px solid ${c.hairline}` }}>
-            {isAdmin ? (
-              <label style={{ position: "relative", cursor: "pointer", flexShrink: 0 }} title={p.photoUrl ? "Changer la photo" : "Ajouter une photo"}>
+          <div key={p.id} style={{ padding: "13px 0", borderBottom: `1px solid ${c.hairline}` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+              {isAdmin ? (
+                <label style={{ position: "relative", cursor: "pointer", flexShrink: 0 }} title={p.photoUrl ? "Changer la photo" : "Ajouter une photo"}>
+                  <Avatar name={p.name} photoUrl={p.photoUrl} size={34} bg={c.sageSoft} />
+                  <span style={{
+                    position: "absolute", bottom: -2, right: -2, width: 16, height: 16, borderRadius: "50%",
+                    background: c.sage700, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                    border: `1.5px solid ${c.card}`,
+                  }}>
+                    <Icon name="camera" size={9} />
+                  </span>
+                  <input type="file" accept="image/*" disabled={pending} style={{ display: "none" }}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(p.id, f); }} />
+                </label>
+              ) : (
                 <Avatar name={p.name} photoUrl={p.photoUrl} size={34} bg={c.sageSoft} />
-                <span style={{
-                  position: "absolute", bottom: -2, right: -2, width: 16, height: 16, borderRadius: "50%",
-                  background: c.sage700, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-                  border: `1.5px solid ${c.card}`,
-                }}>
-                  <Icon name="camera" size={9} />
-                </span>
-                <input type="file" accept="image/*" disabled={pending} style={{ display: "none" }}
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(p.id, f); }} />
-              </label>
-            ) : (
-              <Avatar name={p.name} photoUrl={p.photoUrl} size={34} bg={c.sageSoft} />
-            )}
-            <p style={{ flex: 1, fontSize: 14.5, fontWeight: 500, color: c.sage900, margin: 0 }}>{p.name}</p>
-            {isAdmin && (
-              <button onClick={() => remove(p.id, p.name)} disabled={pending} aria-label="Supprimer"
-                style={{ background: "transparent", border: "none", cursor: "pointer", color: c.eyebrow, display: "flex", padding: 4 }}>
-                <Icon name="x" size={17} />
-              </button>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 14.5, fontWeight: 500, color: c.sage900, margin: 0 }}>{p.name}</p>
+                {p.birthDate ? (
+                  <p style={{ fontSize: 12.5, color: c.sub, margin: "2px 0 0" }}>
+                    {calculateAge(p.birthDate)} ans
+                    {isAdmin && (
+                      <button onClick={() => { setEditingBirthDateId(p.id); setBirthDateInput(p.birthDate!); }}
+                        style={{ background: "transparent", border: "none", cursor: "pointer", color: c.eyebrow, marginLeft: 8, fontSize: 12, textDecoration: "underline", padding: 0 }}>
+                        Modifier
+                      </button>
+                    )}
+                  </p>
+                ) : isAdmin && (
+                  <button onClick={() => { setEditingBirthDateId(p.id); setBirthDateInput(""); }}
+                    style={{ background: "transparent", border: "none", cursor: "pointer", color: c.sage700, fontSize: 12.5, padding: 0, marginTop: 2 }}>
+                    Ajouter une date de naissance
+                  </button>
+                )}
+              </div>
+              {isAdmin && (
+                <button onClick={() => remove(p.id, p.name)} disabled={pending} aria-label="Supprimer"
+                  style={{ background: "transparent", border: "none", cursor: "pointer", color: c.eyebrow, display: "flex", padding: 4 }}>
+                  <Icon name="x" size={17} />
+                </button>
+              )}
+            </div>
+
+            {editingBirthDateId === p.id && (
+              <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
+                <div style={{ flex: "1 1 200px" }}>
+                  <label className="field-label">Date de naissance</label>
+                  <DateTimePicker mode="date" value={birthDateInput} onChange={setBirthDateInput} />
+                </div>
+                <button className="btn btn-primary" onClick={() => saveBirthDate(p.id)} disabled={pending || !birthDateInput} style={{ borderRadius: 9 }}>
+                  {pending ? "…" : "Enregistrer"}
+                </button>
+                <button className="btn" onClick={() => setEditingBirthDateId(null)} style={{ background: "transparent", color: c.sub, borderRadius: 9 }}>
+                  Annuler
+                </button>
+              </div>
             )}
           </div>
         ))}

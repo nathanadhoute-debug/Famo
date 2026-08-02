@@ -229,6 +229,29 @@ export async function addAnotherParent(familyId: string, name: string, birthDate
 }
 
 /**
+ * Ajoute ou modifie la date de naissance d'un proche existant (Réglages) —
+ * champ facultatif à l'onboarding, donc pas toujours renseigné pour un
+ * cercle créé avant l'ajout de ce champ, ou simplement laissé vide à
+ * l'époque.
+ */
+export async function updateParentBirthDate(parentId: string, birthDate: string): Promise<ActionResult> {
+  if (!birthDate) return { ok: false, error: "Choisissez une date." };
+  try {
+    const admin = createAdminClient();
+    const { data: parent } = await admin.from("parents").select("family_id").eq("id", parentId).maybeSingle();
+    if (!parent) return { ok: false, error: "Proche introuvable." };
+    await requireMembership(parent.family_id);
+    const { error } = await admin.from("parents").update({ birth_date: birthDate }).eq("id", parentId);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/dashboard/reglages");
+    revalidatePath("/dashboard");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Erreur inattendue." };
+  }
+}
+
+/**
  * Retire un proche du cercle (admin uniquement). Supprime en cascade tout
  * son historique (médicaments, visites, mesures, journal, ordonnances) —
  * irréversible, à confirmer côté UI avant appel.
