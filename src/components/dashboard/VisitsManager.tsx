@@ -101,7 +101,7 @@ export function VisitsManager({ initial, members, familyId, parentId, currentUse
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div>
               <label className="field-label">Date & heure</label>
-              <DateTimePicker value={form.date} onChange={(v) => setForm((f) => ({ ...f, date: v }))} />
+              <DateTimePicker value={form.date} onChange={(v) => setForm((f) => ({ ...f, date: v }))} disablePast />
             </div>
             <div>
               <label className="field-label">Qui passe ?</label>

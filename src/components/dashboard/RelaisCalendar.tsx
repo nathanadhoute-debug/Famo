@@ -41,6 +41,7 @@ export function RelaisCalendar({ visits, onAddDay, addHref }: {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   const now = new Date();
+  const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const monday = new Date(mondayOf(now));
   monday.setDate(monday.getDate() + weekOffset * 7);
 
@@ -48,7 +49,7 @@ export function RelaisCalendar({ visits, onAddDay, addHref }: {
     const d = new Date(monday);
     d.setDate(d.getDate() + i);
     const v = visits.find((x) => parisDateKey(new Date(x.visit_date)) === parisDateKey(d));
-    return { date: d, weekday: WEEKDAYS[i], isToday: parisDateKey(d) === parisDateKey(now), name: v?.visitorName ?? null };
+    return { date: d, weekday: WEEKDAYS[i], isToday: parisDateKey(d) === parisDateKey(now), isPast: d < today0, name: v?.visitorName ?? null };
   });
   const assignedIdx = days.map((d, i) => (d.name ? i : -1)).filter((i) => i >= 0);
 
@@ -115,27 +116,29 @@ export function RelaisCalendar({ visits, onAddDay, addHref }: {
           }} />
         )}
         <div style={{ position: "relative", display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
-          {days.map((d, i) => (
-            <button key={i}
+          {days.map((d, i) => {
+            const hovered = hoverIdx === i && !d.isPast;
+            return (
+            <button key={i} disabled={d.isPast}
               onClick={() => {
                 if (handleEmptyDayClick) { handleEmptyDayClick(d.date); return; }
                 setMonthView(new Date(d.date.getFullYear(), d.date.getMonth(), 1));
               }}
               onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)}
               style={{
-                background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 12,
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 9,
-                transform: hoverIdx === i ? "scale(1.06)" : "scale(1)", transition: "transform .12s ease",
+                background: "none", border: "none", cursor: d.isPast ? "default" : "pointer", padding: 6, borderRadius: 12,
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 9, opacity: d.isPast ? 0.45 : 1,
+                transform: hovered ? "scale(1.06)" : "scale(1)", transition: "transform .12s ease",
               }}>
               {d.name ? (
-                <Avatar name={d.name} size={40} bg={d.isToday ? c.terracotta : c.sage700} ring={d.isToday || hoverIdx === i ? c.terracotta : undefined} />
+                <Avatar name={d.name} size={40} bg={d.isToday ? c.terracotta : c.sage700} ring={d.isToday || hovered ? c.terracotta : undefined} />
               ) : (
                 <span style={{
                   width: 40, height: 40, borderRadius: "50%",
-                  background: hoverIdx === i ? c.sage050 : c.creamPage,
-                  border: `1.5px dashed ${d.isToday ? c.terracotta : hoverIdx === i ? c.sage700 : "#E1DAC4"}`,
+                  background: hovered ? c.sage050 : c.creamPage,
+                  border: `1.5px dashed ${d.isToday ? c.terracotta : hovered ? c.sage700 : "#E1DAC4"}`,
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  color: d.isToday ? c.terracotta : hoverIdx === i ? c.sage700 : "#C7BFA6",
+                  color: d.isToday ? c.terracotta : hovered ? c.sage700 : "#C7BFA6",
                 }}>
                   <Icon name="plus" size={14} />
                 </span>
@@ -149,7 +152,8 @@ export function RelaisCalendar({ visits, onAddDay, addHref }: {
                 </span>
               </span>
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -180,6 +184,7 @@ function MonthOverlay({ month, visits, onClose, onChangeMonth, onSelectDay, onAd
   onAddDay?: (d: Date) => void;
 }) {
   const now = new Date();
+  const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const grid = monthGrid(month);
   const shift = (delta: number) => onChangeMonth(new Date(month.getFullYear(), month.getMonth() + delta, 1));
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
@@ -216,17 +221,21 @@ function MonthOverlay({ month, visits, onClose, onChangeMonth, onSelectDay, onAd
           {grid.map((d, i) => {
             const inMonth = d.getMonth() === month.getMonth();
             const isToday = parisDateKey(d) === parisDateKey(now);
+            const isPast = d < today0;
             const v = visits.find((x) => parisDateKey(new Date(x.visit_date)) === parisDateKey(d));
-            const hovered = hoverIdx === i;
+            const hovered = hoverIdx === i && !isPast;
             const bg = v ? (isToday ? c.terracotta : c.sage700) : hovered ? c.sage050 : "transparent";
             return (
-              <button key={i}
+              <button key={i} disabled={isPast}
                 onClick={() => {
                   if (!v && onAddDay) { onAddDay(d); onClose(); return; }
                   onSelectDay(d);
                 }}
                 onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: "3px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                style={{
+                  background: "none", border: "none", cursor: isPast ? "default" : "pointer", padding: "3px 0",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 2, opacity: isPast ? 0.4 : 1,
+                }}>
                 <span style={{
                   width: 28, height: 28, borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center",
                   fontSize: 12.5, fontFamily: font.body, background: bg, color: v ? "#F4F2EC" : inMonth ? c.sage900 : "#C7BFA6",

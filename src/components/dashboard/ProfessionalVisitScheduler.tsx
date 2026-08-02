@@ -72,7 +72,7 @@ export function ProfessionalVisitScheduler({ initial, familyId, parentId }: {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div>
               <label className="field-label">Date & heure</label>
-              <DateTimePicker value={date} onChange={setDate} />
+              <DateTimePicker value={date} onChange={setDate} disablePast />
             </div>
             <div>
               <label className="field-label">Note <span style={{ fontWeight: 400 }}>(facultatif)</span></label>

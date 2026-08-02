@@ -166,7 +166,7 @@ export function MedicationsManager({ initial, familyId, parentId, role, professi
             <div>
               <label className="field-label">Expiration ordonnance</label>
               <DateTimePicker mode="date" value={form.rxExpiresAt}
-                onChange={(v) => setForm((f) => ({ ...f, rxExpiresAt: v }))} />
+                onChange={(v) => setForm((f) => ({ ...f, rxExpiresAt: v }))} disablePast />
             </div>
           </div>
           <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 14, fontSize: 13.5, color: c.sub, cursor: "pointer" }}>

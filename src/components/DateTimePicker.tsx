@@ -51,11 +51,15 @@ function monthGrid(monthStart: Date): Date[] {
  * inputs natifs ("YYYY-MM-DD" ou "YYYY-MM-DDTHH:mm") pour rester un
  * remplacement direct, sans toucher la logique de conversion en UTC autour.
  */
-export function DateTimePicker({ value, onChange, mode = "datetime", placeholder }: {
+export function DateTimePicker({ value, onChange, mode = "datetime", placeholder, disablePast }: {
   value: string;
   onChange: (value: string) => void;
   mode?: "date" | "datetime";
   placeholder?: string;
+  /** Grise et rend non cliquables les jours déjà passés — pour une
+   * planification (visite, ordonnance à venir), jamais pour une date déjà
+   * nécessairement passée (naissance, mesure prise plus tôt). */
+  disablePast?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -104,6 +108,7 @@ export function DateTimePicker({ value, onChange, mode = "datetime", placeholder
     : (placeholder ?? "Choisir…");
 
   const now = new Date();
+  const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const grid = monthGrid(viewMonth);
 
   return (
@@ -163,17 +168,19 @@ export function DateTimePicker({ value, onChange, mode = "datetime", placeholder
                     const inMonth = d.getMonth() === viewMonth.getMonth();
                     const isToday = sameDay(d, now);
                     const isSelected = parsed.date ? sameDay(d, parsed.date) : false;
-                    const hovered = hoverDay === i;
+                    const isPast = disablePast && d < today0;
+                    const hovered = hoverDay === i && !isPast;
                     return (
-                      <button key={i} type="button" onClick={() => selectDay(d)}
+                      <button key={i} type="button" disabled={isPast} onClick={() => selectDay(d)}
                         onMouseEnter={() => setHoverDay(i)} onMouseLeave={() => setHoverDay(null)}
                         style={{
-                          width: 30, height: 30, borderRadius: "50%", border: "none", cursor: "pointer",
+                          width: 30, height: 30, borderRadius: "50%", border: "none",
+                          cursor: isPast ? "default" : "pointer",
                           fontSize: 12.5, fontFamily: font.body,
                           background: isSelected ? c.sage900 : hovered ? c.sage050 : "transparent",
-                          color: isSelected ? "#F4F2EC" : inMonth ? c.ink : "#C7BFA6",
+                          color: isPast ? "#D8D2BE" : isSelected ? "#F4F2EC" : inMonth ? c.ink : "#C7BFA6",
                           outline: !isSelected && isToday ? `1.5px solid ${c.terracotta}` : !isSelected && hovered ? `1.5px solid ${c.sage700}` : "none",
-                          opacity: inMonth ? 1 : 0.55,
+                          opacity: isPast ? 0.5 : inMonth ? 1 : 0.55,
                           transition: "background .1s ease",
                         }}>
                         {d.getDate()}
