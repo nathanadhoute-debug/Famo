@@ -3,23 +3,61 @@ const HEIC_PATTERN = /\.hei[cf]$/i;
 export type HeicConversionResult = { file: File; warning: string | null };
 
 /**
+ * Tente un décodage HEIC natif via <img>/<canvas> — ne fonctionne que dans
+ * Safari (iPhone/Mac), seul navigateur avec un décodeur HEIC natif intégré
+ * (celui d'Apple, qui gère aussi le mode Portrait). Ne lève jamais : renvoie
+ * `null` si le navigateur ne peut pas décoder (Chrome/Firefox) ou en cas de
+ * problème quelconque, pour laisser la suite (heic2any) prendre le relais.
+ */
+async function tryNativeHeicDecode(file: File): Promise<File | null> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    if (!img.naturalWidth || !img.naturalHeight) return null;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0);
+
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+    if (!blob) return null;
+    return new File([blob], file.name.replace(HEIC_PATTERN, ".jpg"), { type: "image/jpeg" });
+  } catch {
+    return null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/**
  * Convertit une photo HEIC (format par défaut des photos iPhone, non
  * décodable par la plupart des navigateurs hors Safari) en JPEG directement
  * dans le navigateur, avant l'envoi au serveur. Ne fait rien si le fichier
- * n'est pas au format HEIC. Import dynamique de la bibliothèque de
- * conversion (assez lourde, WASM) : chargée uniquement si un HEIC est
- * réellement sélectionné, jamais pour les autres formats.
+ * n'est pas au format HEIC.
  *
- * Certaines variantes de HEIC (typiquement le mode Portrait, qui embarque
- * une carte de profondeur) ne sont pas décodables par cette bibliothèque —
- * plutôt que de bloquer l'ajout, on renvoie alors le fichier original tel
- * quel : Safari (iPhone/Mac) l'affichera nativement, les autres navigateurs
- * afficheront une image cassée pour cette photo précise. Un avertissement
- * est renvoyé pour informer l'utilisateur sans empêcher l'envoi.
+ * Deux méthodes essayées dans l'ordre :
+ * 1. Décodage natif via <img>/<canvas> (fonctionne uniquement dans Safari,
+ *    mais gère alors absolument toutes les variantes de HEIC, y compris le
+ *    mode Portrait, puisque c'est le vrai décodeur d'Apple).
+ * 2. `heic2any` (bibliothèque JS/WASM, chargée dynamiquement — assez lourde,
+ *    donc jamais importée si la méthode native a déjà réussi) : fonctionne
+ *    dans les autres navigateurs, mais pas pour toutes les variantes de HEIC.
+ *
+ * Si les deux échouent (ex. mode Portrait dans un navigateur autre que
+ * Safari), le fichier original est renvoyé tel quel avec un avertissement
+ * non bloquant plutôt que d'empêcher l'ajout.
  */
 export async function convertHeicIfNeeded(file: File): Promise<HeicConversionResult> {
   const isHeic = file.type === "image/heic" || file.type === "image/heif" || HEIC_PATTERN.test(file.name);
   if (!isHeic) return { file, warning: null };
+
+  const native = await tryNativeHeicDecode(file);
+  if (native) return { file: native, warning: null };
 
   try {
     const heic2any = (await import("heic2any")).default;
