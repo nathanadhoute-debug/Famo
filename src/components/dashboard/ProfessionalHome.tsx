@@ -4,7 +4,7 @@ import { Avatar, Eyebrow, Hairline, Sparkline } from "@/components/dashboard/edi
 import { ParentSwitcher } from "@/components/dashboard/ParentSwitcher";
 import { FamilySwitcher } from "@/components/dashboard/FamilySwitcher";
 import { ProfessionalVisitScheduler } from "@/components/dashboard/ProfessionalVisitScheduler";
-import { timeAgo, parseNumeric } from "@/lib/format";
+import { timeAgo, parseNumeric, calculateAge } from "@/lib/format";
 import { c, font } from "@/lib/theme";
 import type { ParentLite, FamilyLite } from "@/lib/family";
 
@@ -54,6 +54,11 @@ export function ProfessionalHome({
             {parent && <Avatar name={parent.name} photoUrl={parent.photoUrl} size={48} bg={c.sage700} />}
             <h1 style={{ fontFamily: font.display, fontSize: "clamp(26px,4vw,32px)", fontWeight: 500, lineHeight: 1.3, color: "#F4F2EC", margin: 0, maxWidth: 500, letterSpacing: "-0.2px" }}>
               {parent ? parent.name : "Aucun proche sélectionné"}
+              {parent?.birth_date && (
+                <span style={{ fontSize: "0.55em", fontWeight: 400, color: "#B7C6BC", marginLeft: 10 }}>
+                  {calculateAge(parent.birth_date)} ans
+                </span>
+              )}
             </h1>
           </div>
 
