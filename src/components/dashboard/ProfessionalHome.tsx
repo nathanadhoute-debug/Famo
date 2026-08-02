@@ -116,7 +116,7 @@ export function ProfessionalHome({
         <Eyebrow>Journal</Eyebrow>
         {lastEntry ? (
           <div style={{ marginTop: 14, borderLeft: `2px solid ${c.sage700}`, paddingLeft: 16 }}>
-            <p style={{ fontFamily: font.display, fontSize: 20, fontWeight: 400, lineHeight: 1.55, color: c.sage900, margin: 0 }}>
+            <p style={{ fontFamily: font.body, fontSize: 16, fontWeight: 500, lineHeight: 1.5, color: c.sage900, margin: 0 }}>
               {lastEntry.content}
             </p>
             <p style={{ fontSize: 12.5, color: c.eyebrow, margin: "10px 0 0" }}>
