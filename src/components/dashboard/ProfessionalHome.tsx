@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
-import { Eyebrow, Hairline, Sparkline } from "@/components/dashboard/editorial";
+import { Avatar, Eyebrow, Hairline, Sparkline } from "@/components/dashboard/editorial";
 import { ParentSwitcher } from "@/components/dashboard/ParentSwitcher";
 import { FamilySwitcher } from "@/components/dashboard/FamilySwitcher";
 import { ProfessionalVisitScheduler } from "@/components/dashboard/ProfessionalVisitScheduler";
@@ -50,9 +50,12 @@ export function ProfessionalHome({
             </div>
           )}
 
-          <h1 style={{ fontFamily: font.display, fontSize: "clamp(26px,4vw,32px)", fontWeight: 500, lineHeight: 1.3, color: "#F4F2EC", margin: (families.length > 1 || parents.length > 1) ? 0 : "18px 0 0", maxWidth: 500, letterSpacing: "-0.2px" }}>
-            {parent ? parent.name : "Aucun proche sélectionné"}
-          </h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, margin: (families.length > 1 || parents.length > 1) ? 0 : "18px 0 0" }}>
+            {parent && <Avatar name={parent.name} photoUrl={parent.photoUrl} size={48} bg={c.sage700} />}
+            <h1 style={{ fontFamily: font.display, fontSize: "clamp(26px,4vw,32px)", fontWeight: 500, lineHeight: 1.3, color: "#F4F2EC", margin: 0, maxWidth: 500, letterSpacing: "-0.2px" }}>
+              {parent ? parent.name : "Aucun proche sélectionné"}
+            </h1>
+          </div>
 
           {overdueDoses > 0 && (
             <div style={{ display: "flex", alignItems: "flex-start", gap: 9, paddingTop: 18, marginTop: 20, borderTop: "1px solid rgba(244,242,236,0.12)" }}>

@@ -32,20 +32,29 @@ export function Hairline({ margin = "28px 0" }: { margin?: string }) {
   return <div style={{ height: 1, background: c.hairline, margin }} />;
 }
 
-/** Pastille d'initiales. */
-export function Avatar({ name, size = 34, bg = c.sage700, fg = "#F4F2EC", ring }: {
+/** Pastille d'initiales, ou photo si `photoUrl` est fourni. */
+export function Avatar({ name, size = 34, bg = c.sage700, fg = "#F4F2EC", ring, photoUrl }: {
   name: string;
   size?: number;
   bg?: string;
   fg?: string;
   ring?: string;
+  photoUrl?: string | null;
 }) {
+  const border = ring ? `2px solid ${ring}` : undefined;
+  if (photoUrl) {
+    return (
+      <img src={photoUrl} alt={name} width={size} height={size} style={{
+        width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border,
+      }} />
+    );
+  }
   return (
     <span style={{
       width: size, height: size, borderRadius: "50%", background: bg, color: fg,
       display: "inline-flex", alignItems: "center", justifyContent: "center",
       fontSize: Math.round(size * 0.34), fontWeight: 500, flexShrink: 0,
-      fontFamily: font.body, border: ring ? `2px solid ${ring}` : undefined,
+      fontFamily: font.body, border,
     }}>
       {toInitials(name)}
     </span>

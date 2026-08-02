@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { c, font } from "@/lib/theme";
 import { initials } from "@/lib/format";
 
-type ParentLite = { id: string; name: string };
+type ParentLite = { id: string; name: string; photoUrl?: string | null };
 
 /**
  * Sélecteur de proche affiché uniquement s'il y en a plus d'un dans le
@@ -33,10 +33,15 @@ export function ParentSwitcher({ parents, activeId }: { parents: ParentLite[]; a
               color: active ? "#F4F2EC" : "#B7C6BC",
               border: `1px solid ${active ? "rgba(244,242,236,0.3)" : "rgba(244,242,236,0.14)"}`,
             }}>
-            <span style={{
-              width: 22, height: 22, borderRadius: "50%", background: active ? c.terracotta : "rgba(244,242,236,0.16)",
-              color: "#fff", fontSize: 10, fontWeight: 600, display: "grid", placeItems: "center", flexShrink: 0,
-            }}>{initials(p.name)}</span>
+            {p.photoUrl ? (
+              <img src={p.photoUrl} alt={p.name} width={22} height={22}
+                style={{ width: 22, height: 22, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+            ) : (
+              <span style={{
+                width: 22, height: 22, borderRadius: "50%", background: active ? c.terracotta : "rgba(244,242,236,0.16)",
+                color: "#fff", fontSize: 10, fontWeight: 600, display: "grid", placeItems: "center", flexShrink: 0,
+              }}>{initials(p.name)}</span>
+            )}
             {p.name}
           </button>
         );

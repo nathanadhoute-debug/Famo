@@ -2,8 +2,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
+import { Icon } from "@/components/Icon";
 import { c, font } from "@/lib/theme";
 import { createCircle, addParent } from "@/lib/actions/onboarding";
+import { updateParentPhoto } from "@/lib/actions/circle";
 import { createInvite } from "@/lib/actions/invites";
 import { DateTimePicker } from "@/components/DateTimePicker";
 
@@ -18,6 +20,8 @@ export default function OnboardingPage() {
   const [familyName, setFamilyName] = useState("");
   const [parentName, setParentName] = useState("");
   const [birthDate, setBirthDate] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [invitesSent, setInvitesSent] = useState<{ email: string; link: string; emailSent: boolean }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -36,8 +40,21 @@ export default function OnboardingPage() {
   const submitParent = async () => {
     setLoading(true); setError("");
     const res = await addParent(familyId, parentName, birthDate);
+    if (!res.ok) { setLoading(false); return setError(res.error); }
+    if (photoFile) {
+      const fd = new FormData();
+      fd.set("file", photoFile);
+      const photoRes = await updateParentPhoto(res.data.parentId, fd);
+      // La photo est facultative : en cas d'échec on prévient mais on ne bloque
+      // pas l'onboarding — le proche pourra toujours l'ajouter plus tard depuis
+      // Réglages. On reste sur cette étape pour que le message reste visible.
+      if (!photoRes.ok) {
+        setLoading(false);
+        setError(`Proche enregistré, mais la photo n'a pas pu être envoyée : ${photoRes.error}`);
+        return;
+      }
+    }
     setLoading(false);
-    if (!res.ok) return setError(res.error);
     setStep("invite");
   };
 
@@ -113,6 +130,32 @@ export default function OnboardingPage() {
                 placeholder="Jeanne Dupont" />
               <label className="field-label">Date de naissance <span style={{ fontWeight: 400 }}>(facultatif)</span></label>
               <DateTimePicker mode="date" value={birthDate} onChange={setBirthDate} />
+
+              <label className="field-label" style={{ marginTop: 16, display: "block" }}>
+                Photo <span style={{ fontWeight: 400 }}>(facultatif)</span>
+              </label>
+              <label style={{
+                display: "flex", alignItems: "center", gap: 10, marginTop: 6, cursor: "pointer",
+              }}>
+                <span style={{
+                  width: 44, height: 44, borderRadius: "50%", flexShrink: 0, overflow: "hidden",
+                  background: c.line, display: "flex", alignItems: "center", justifyContent: "center", color: c.muted,
+                }}>
+                  {photoPreview
+                    ? <img src={photoPreview} alt="" width={44} height={44} style={{ width: 44, height: 44, objectFit: "cover" }} />
+                    : <Icon name="camera" size={18} />}
+                </span>
+                <span style={{ fontSize: 13.5, color: c.sage700, fontWeight: 500 }}>
+                  {photoFile ? "Changer la photo" : "Ajouter une photo"}
+                </span>
+                <input type="file" accept="image/*" style={{ display: "none" }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    setPhotoFile(file);
+                    setPhotoPreview(file ? URL.createObjectURL(file) : "");
+                  }} />
+              </label>
+
               <Actions>
                 <button className="btn btn-ghost" onClick={() => setStep("family")}>← Retour</button>
                 <button className="btn btn-primary" onClick={submitParent} disabled={loading || !parentName.trim()}>

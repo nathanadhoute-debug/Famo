@@ -81,7 +81,7 @@ export default function ConfidentialitePage() {
         <h1 style={{ fontFamily: font.display, fontSize: 34, color: c.sage900, margin: "8px 0 6px", fontWeight: 500 }}>
           Politique de confidentialité
         </h1>
-        <p style={{ fontSize: 14, color: c.sub, margin: "0 0 8px" }}>Dernière mise à jour : 1er août 2026</p>
+        <p style={{ fontSize: 14, color: c.sub, margin: "0 0 8px" }}>Dernière mise à jour : 2 août 2026</p>
 
         <H2>1. Préambule</H2>
         <P>
@@ -128,9 +128,11 @@ export default function ConfidentialitePage() {
         </P>
         <H3>4.2 Données relatives au proche accompagné</H3>
         <P>
-          Nom, date de naissance, notes libres. Ces informations sont saisies volontairement par les membres du
-          cercle familial et concernent une tierce personne (le proche accompagné), qui n&apos;est généralement pas
-          elle-même utilisatrice directe du Service.
+          Nom, date de naissance, photo de profil (facultative), notes libres. Ces informations sont saisies
+          volontairement par les membres du cercle familial et concernent une tierce personne (le proche accompagné),
+          qui n&apos;est généralement pas elle-même utilisatrice directe du Service. La photo, lorsqu&apos;elle est
+          ajoutée, est visible par l&apos;ensemble des membres du cercle ainsi que par tout professionnel de santé
+          invité autorisé à suivre ce proche (mêmes règles de visibilité que le nom — voir section 6.2).
         </P>
         <H3>4.3 Données de santé</H3>
         <P>Sont collectées, à la seule initiative des utilisateurs :</P>

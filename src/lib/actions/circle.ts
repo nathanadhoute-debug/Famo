@@ -249,6 +249,50 @@ export async function removeParent(parentId: string): Promise<ActionResult> {
   }
 }
 
+const AVATAR_BUCKET = "avatars";
+const AVATAR_MAX_SIZE = 5 * 1024 * 1024; // 5 Mo
+
+/**
+ * Ajoute ou remplace la photo d'un proche (onboarding, ou plus tard depuis
+ * Réglages). Même niveau d'accès que `addAnotherParent` (pas admin-only).
+ */
+export async function updateParentPhoto(parentId: string, formData: FormData): Promise<ActionResult> {
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Sélectionnez une image." };
+  if (!file.type.startsWith("image/")) return { ok: false, error: "Le fichier doit être une image." };
+  if (file.size > AVATAR_MAX_SIZE) return { ok: false, error: "Image trop volumineuse (max 5 Mo)." };
+
+  try {
+    const admin = createAdminClient();
+    const { data: parent } = await admin.from("parents").select("family_id, avatar_url").eq("id", parentId).maybeSingle();
+    if (!parent) return { ok: false, error: "Proche introuvable." };
+    await requireMembership(parent.family_id);
+
+    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+    const path = `${parent.family_id}/${parentId}-${crypto.randomUUID()}-${safeName}`;
+
+    const { error: upErr } = await admin.storage
+      .from(AVATAR_BUCKET)
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (upErr) return { ok: false, error: `Envoi impossible : ${upErr.message}` };
+
+    const { error: dbErr } = await admin.from("parents").update({ avatar_url: path }).eq("id", parentId);
+    if (dbErr) {
+      await admin.storage.from(AVATAR_BUCKET).remove([path]);
+      return { ok: false, error: dbErr.message };
+    }
+
+    // Nettoyage de l'ancienne photo si on en remplace une.
+    if (parent.avatar_url) await admin.storage.from(AVATAR_BUCKET).remove([parent.avatar_url]);
+
+    revalidatePath("/dashboard/reglages");
+    revalidatePath("/dashboard");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Erreur inattendue." };
+  }
+}
+
 /** Annule une invitation en attente (admin). */
 export async function cancelInvite(inviteId: string): Promise<ActionResult> {
   try {

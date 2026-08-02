@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export type MemberRole = "admin" | "member" | "readonly" | "professional";
 export type ProfessionCategory = "aide_soignant" | "infirmier" | "kine" | "medecin_traitant" | "chirurgien" | "autre";
-export type ParentLite = { id: string; name: string; birth_date: string | null };
+export type ParentLite = { id: string; name: string; birth_date: string | null; photoUrl: string | null };
 
 export type FamilyLite = { id: string; name: string };
 
@@ -63,9 +63,15 @@ export async function getCurrentFamily(): Promise<CurrentFamily | null> {
 
   const { data: parentsRaw } = await supabase
     .from("parents")
-    .select("id, name, birth_date")
+    .select("id, name, birth_date, avatar_url")
     .eq("family_id", family.id)
     .order("created_at", { ascending: true });
+  const parentsWithPhoto: ParentLite[] = (parentsRaw ?? []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    birth_date: p.birth_date,
+    photoUrl: p.avatar_url ? supabase.storage.from("avatars").getPublicUrl(p.avatar_url).data.publicUrl : null,
+  }));
 
   // Un professionnel avec des proches autorisés explicitement listés ne voit
   // que ceux-là — jamais les autres proches du cercle. Une invitation créée
@@ -73,8 +79,8 @@ export async function getCurrentFamily(): Promise<CurrentFamily | null> {
   // à tous les proches, pour ne pas casser silencieusement un compte existant.
   const authorizedIds = membership.authorized_parent_ids as string[] | null;
   const parents = membership.role === "professional" && authorizedIds && authorizedIds.length > 0
-    ? (parentsRaw ?? []).filter((p) => authorizedIds.includes(p.id))
-    : (parentsRaw ?? []);
+    ? parentsWithPhoto.filter((p) => authorizedIds.includes(p.id))
+    : parentsWithPhoto;
   const activeParentId = cookieStore.get(ACTIVE_PARENT_COOKIE)?.value;
   const parent = parents.find((p) => p.id === activeParentId) ?? parents[0] ?? null;
 

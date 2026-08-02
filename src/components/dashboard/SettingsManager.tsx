@@ -4,14 +4,14 @@ import { useRouter } from "next/navigation";
 import { c } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { Eyebrow, Hairline, Avatar } from "@/components/dashboard/editorial";
-import { updateProfile, renameFamily, removeMember, cancelInvite, updateNotificationPrefs, addAnotherParent, removeParent, leaveFamily, updateProfessionalAccess } from "@/lib/actions/circle";
+import { updateProfile, renameFamily, removeMember, cancelInvite, updateNotificationPrefs, addAnotherParent, removeParent, updateParentPhoto, leaveFamily, updateProfessionalAccess } from "@/lib/actions/circle";
 import { createInvite } from "@/lib/actions/invites";
 import { signOutAction } from "@/lib/actions/auth";
 
 type Member = { userId: string; name: string; role: string; professionCategory?: string | null; professionDetail?: string | null; authorizedParentIds?: string[] | null };
 type Invite = { id: string; email: string; role: string; professionCategory?: string | null };
 type NotificationPrefs = { rxExpiry: boolean; visitReminder: boolean; overdueDoses: boolean };
-type Parent = { id: string; name: string };
+type Parent = { id: string; name: string; photoUrl: string | null };
 
 const ROLE_LABEL: Record<string, string> = { admin: "Admin", member: "Membre", readonly: "Lecture seule", professional: "Professionnel" };
 const PROFESSION_LABEL: Record<string, string> = {
@@ -192,6 +192,17 @@ function ParentsSection({ familyId, isAdmin, parents }: { familyId: string; isAd
     });
   };
 
+  const uploadPhoto = (parentId: string, file: File) => {
+    setErr("");
+    const fd = new FormData();
+    fd.set("file", file);
+    start(async () => {
+      const r = await updateParentPhoto(parentId, fd);
+      if (!r.ok) return setErr(r.error);
+      router.refresh();
+    });
+  };
+
   return (
     <section>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -206,7 +217,22 @@ function ParentsSection({ familyId, isAdmin, parents }: { familyId: string; isAd
       <div style={{ marginTop: 8 }}>
         {parents.map((p) => (
           <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 13, padding: "13px 0", borderBottom: `1px solid ${c.hairline}` }}>
-            <Avatar name={p.name} size={34} bg={c.sageSoft} />
+            {isAdmin ? (
+              <label style={{ position: "relative", cursor: "pointer", flexShrink: 0 }} title={p.photoUrl ? "Changer la photo" : "Ajouter une photo"}>
+                <Avatar name={p.name} photoUrl={p.photoUrl} size={34} bg={c.sageSoft} />
+                <span style={{
+                  position: "absolute", bottom: -2, right: -2, width: 16, height: 16, borderRadius: "50%",
+                  background: c.sage700, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                  border: `1.5px solid ${c.card}`,
+                }}>
+                  <Icon name="camera" size={9} />
+                </span>
+                <input type="file" accept="image/*" disabled={pending} style={{ display: "none" }}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(p.id, f); }} />
+              </label>
+            ) : (
+              <Avatar name={p.name} photoUrl={p.photoUrl} size={34} bg={c.sageSoft} />
+            )}
             <p style={{ flex: 1, fontSize: 14.5, fontWeight: 500, color: c.sage900, margin: 0 }}>{p.name}</p>
             {isAdmin && (
               <button onClick={() => remove(p.id, p.name)} disabled={pending} aria-label="Supprimer"
