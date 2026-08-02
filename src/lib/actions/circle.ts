@@ -261,13 +261,11 @@ export async function updateParentPhoto(parentId: string, formData: FormData): P
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Sélectionnez une image." };
   if (!file.type.startsWith("image/")) return { ok: false, error: "Le fichier doit être une image." };
   if (file.size > AVATAR_MAX_SIZE) return { ok: false, error: "Image trop volumineuse (max 5 Mo)." };
-  // Le HEIC (format par défaut des photos iPhone) n'est affichable que dans
-  // Safari — la plupart des navigateurs ne savent pas le décoder dans une
-  // balise <img>. On le refuse ici plutôt que de stocker une image qui
-  // s'afficherait cassée pour la moitié des utilisateurs.
-  if (file.type === "image/heic" || file.type === "image/heif" || /\.hei[cf]$/i.test(file.name)) {
-    return { ok: false, error: "Format HEIC non pris en charge — utilisez une photo JPEG ou PNG (sur iPhone : Réglages → Appareil photo → Formats → « Le plus compatible »)." };
-  }
+  // Le HEIC n'est converti en JPEG que côté client (voir lib/heic.ts) — un
+  // HEIC arrivant jusqu'ici est un cas où la conversion a échoué (variante non
+  // décodable, ex. mode Portrait) et le client l'envoie volontairement tel
+  // quel plutôt que de bloquer l'ajout : Safari l'affichera nativement, les
+  // autres navigateurs afficheront une image cassée pour cette photo précise.
 
   try {
     const admin = createAdminClient();

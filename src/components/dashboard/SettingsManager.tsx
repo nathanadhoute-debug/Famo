@@ -196,17 +196,12 @@ function ParentsSection({ familyId, isAdmin, parents }: { familyId: string; isAd
   const uploadPhoto = (parentId: string, file: File) => {
     setErr("");
     start(async () => {
-      let converted: File;
-      try {
-        converted = await convertHeicIfNeeded(file);
-      } catch {
-        setErr("La conversion de cette photo a échoué — essayez une autre photo.");
-        return;
-      }
+      const { file: converted, warning } = await convertHeicIfNeeded(file);
       const fd = new FormData();
       fd.set("file", converted);
       const r = await updateParentPhoto(parentId, fd);
       if (!r.ok) return setErr(r.error);
+      if (warning) setErr(warning);
       router.refresh();
     });
   };

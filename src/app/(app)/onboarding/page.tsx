@@ -155,15 +155,11 @@ export default function OnboardingPage() {
                     const file = e.target.files?.[0] ?? null;
                     if (!file) { setPhotoFile(null); setPhotoPreview(""); return; }
                     setConvertingPhoto(true); setError("");
-                    try {
-                      const converted = await convertHeicIfNeeded(file);
-                      setPhotoFile(converted);
-                      setPhotoPreview(URL.createObjectURL(converted));
-                    } catch {
-                      setError("La conversion de cette photo a échoué — essayez une autre photo.");
-                    } finally {
-                      setConvertingPhoto(false);
-                    }
+                    const { file: converted, warning } = await convertHeicIfNeeded(file);
+                    setPhotoFile(converted);
+                    setPhotoPreview(URL.createObjectURL(converted));
+                    if (warning) setError(warning);
+                    setConvertingPhoto(false);
                   }} />
               </label>
 
