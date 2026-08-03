@@ -81,7 +81,7 @@ export default function ConfidentialitePage() {
         <h1 style={{ fontFamily: font.display, fontSize: 34, color: c.sage900, margin: "8px 0 6px", fontWeight: 500 }}>
           Politique de confidentialité
         </h1>
-        <p style={{ fontSize: 14, color: c.sub, margin: "0 0 8px" }}>Dernière mise à jour : 2 août 2026</p>
+        <p style={{ fontSize: 14, color: c.sub, margin: "0 0 8px" }}>Dernière mise à jour : 3 août 2026</p>
 
         <H2>1. Préambule</H2>
         <P>
@@ -204,6 +204,11 @@ export default function ConfidentialitePage() {
           kinésithérapeute, médecin traitant, chirurgien, ou autre profession déclarée) afin de faciliter le suivi
           du proche accompagné. Le Service n&apos;initie jamais lui-même cette mise en relation : elle résulte
           exclusivement d&apos;une invitation explicite de la famille, à une adresse email qu&apos;elle choisit.
+        </P>
+        <P>
+          Un professionnel de santé invité voit également, à titre d&apos;information de base sur le proche qu&apos;il
+          accompagne, son nom, sa photo de profil lorsqu&apos;elle est renseignée, et son âge calculé à partir de sa
+          date de naissance lorsqu&apos;elle est renseignée.
         </P>
         <P>
           L&apos;accès d&apos;un professionnel de santé invité est volontairement restreint : constantes de santé,
